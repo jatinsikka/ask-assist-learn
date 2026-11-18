@@ -1,0 +1,1341 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<style>:root{color-scheme:light;padding-top:env(safe-area-inset-top);padding-bottom:env(safe-area-inset-bottom)}body{margin:0}img{max-width:100%}[hidden]{display:none!important}</style>
+</head>
+<body>
+<title>Ask, Assist, Learn</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<meta name="description" content="Proposed MS thesis: human-in-the-loop learning for long-horizon robot manipulation in manufacturing, on robot arms and humanoids.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@75..125,500..800&family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<style>
+/* Layout: factory control-room pitch. A live supervisor console opens the page, then a single reading column with wide bands for diagrams and evidence. */
+:root{
+  --bg:#EFF1EE; --surface:#FFFFFF; --sunk:#E4E8E4; --ink:#15191C; --muted:#56606A; --line:#CCD3CF;
+  --amber:#E0A100; --amber-ink:#7E5900; --auto:#0C7A72; --alert:#C23B26; --op:#3450D1; --learn:#7A4CC2;
+  --hud-bg:#0E1316; --hud-panel:#151C20; --hud-line:#26323A; --hud-ink:#DCE6E4; --hud-dim:#8A9AA2;
+  --hud-amber:#F2B71C; --hud-auto:#3FC7BC; --hud-alert:#FF6A52; --hud-op:#8296FF; --hud-learn:#B28CFF;
+  --f-display:"Archivo","Arial Narrow",Arial,sans-serif;
+  --f-body:"IBM Plex Sans",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --f-mono:"IBM Plex Mono",ui-monospace,SFMono-Regular,Menlo,monospace;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#101417; --surface:#171D21; --sunk:#0C1013; --ink:#E6ECE9; --muted:#9AA6AE; --line:#2A343B;
+    --amber:#F2B71C; --amber-ink:#F2B71C; --auto:#3FC7BC; --alert:#FF6A52; --op:#8296FF; --learn:#B28CFF;
+    color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#101417; --surface:#171D21; --sunk:#0C1013; --ink:#E6ECE9; --muted:#9AA6AE; --line:#2A343B;
+  --amber:#F2B71C; --amber-ink:#F2B71C; --auto:#3FC7BC; --alert:#FF6A52; --op:#8296FF; --learn:#B28CFF;
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:16px;line-height:1.6;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:0 64px}
+a{color:inherit;text-decoration-color:var(--amber);text-underline-offset:3px;text-decoration-thickness:2px}
+a:hover{color:var(--amber-ink)}
+:focus-visible{outline:2px solid var(--amber);outline-offset:2px}
+.wrap{max-width:1120px;margin:0 auto}
+.prose{max-width:68ch}
+h1,h2,h3{font-family:var(--f-display);text-wrap:balance;line-height:1.08;margin:0}
+h2{font-size:clamp(28px,4vw,40px);font-weight:750;font-stretch:88%;letter-spacing:-.01em}
+h3{font-size:19px;font-weight:700;font-stretch:95%}
+p{margin:0}
+.eyebrow{font-family:var(--f-mono);font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:var(--amber-ink);font-weight:600}
+.mono{font-family:var(--f-mono)}
+.muted{color:var(--muted)}
+section{padding-block:72px 8px}
+.stack{display:flex;flex-direction:column;gap:16px}
+
+/* masthead */
+.mast{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;padding-block:20px;border-bottom:1px solid var(--line);font-family:var(--f-mono);font-size:12px;color:var(--muted);letter-spacing:.04em}
+.mast b{color:var(--ink);font-weight:600}
+.hero{padding-block:44px 28px;display:grid;gap:22px}
+.hero h1{font-size:clamp(40px,7.4vw,84px);font-weight:800;font-stretch:78%;letter-spacing:-.02em}
+.hero h1 .amp{color:var(--amber-ink)}
+.lede{font-size:clamp(18px,2vw,21px);max-width:60ch;color:var(--ink)}
+.lede em{font-style:normal;background:linear-gradient(transparent 62%,color-mix(in srgb,var(--amber) 38%,transparent) 62%)}
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.chip{font-family:var(--f-mono);font-size:12px;border:1px solid var(--line);padding:4px 10px;border-radius:999px;color:var(--muted);background:var(--surface)}
+
+/* console (hero demo) */
+.console{background:var(--hud-bg);color:var(--hud-ink);border-radius:14px;padding:16px;position:relative;font-family:var(--f-mono);font-size:13px;
+  box-shadow:0 1px 0 var(--line),0 24px 60px -30px rgba(0,0,0,.45)}
+.console::before,.console::after{content:"";position:absolute;width:22px;height:22px;border:2px solid var(--hud-amber);pointer-events:none}
+.console::before{top:8px;left:8px;border-right:0;border-bottom:0;border-top-left-radius:6px}
+.console::after{bottom:8px;right:8px;border-left:0;border-top:0;border-bottom-right-radius:6px}
+.hud-top{display:flex;flex-wrap:wrap;justify-content:space-between;gap:10px;align-items:center;padding:4px 8px 12px}
+.hud-title{font-family:var(--f-display);font-stretch:85%;font-weight:700;font-size:15px;letter-spacing:.06em;text-transform:uppercase}
+.hud-title span{color:var(--hud-amber)}
+.hud-ctrl{display:flex;gap:8px;flex-wrap:wrap}
+.btn{font:600 12px/1 var(--f-mono);letter-spacing:.04em;border-radius:8px;padding:9px 12px;border:1px solid var(--hud-line);background:var(--hud-panel);color:var(--hud-ink);cursor:pointer}
+.btn:hover{border-color:var(--hud-dim)}
+.btn.primary{background:var(--hud-amber);color:#15191C;border-color:var(--hud-amber)}
+.btn.op{background:var(--hud-op);color:#0E1316;border-color:var(--hud-op)}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+.alertbar{display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:space-between;margin:0 4px 12px;padding:10px 12px;border-radius:10px;
+  background:color-mix(in srgb,var(--hud-alert) 16%,var(--hud-panel));border:1px solid color-mix(in srgb,var(--hud-alert) 55%,transparent)}
+.alertbar .msg{min-width:0}
+.alertbar b{color:var(--hud-alert)}
+.alertbar.calm{background:var(--hud-panel);border-color:var(--hud-line)}
+.alertbar.calm b{color:var(--hud-auto)}
+.fleet{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;padding:0 4px}
+@media (max-width:900px){.fleet{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.bot{background:var(--hud-panel);border:1px solid var(--hud-line);border-radius:10px;padding:12px;display:flex;flex-direction:column;gap:9px;min-width:0;position:relative}
+.bot[data-state="help"]{border-color:var(--hud-alert);box-shadow:inset 0 0 0 1px var(--hud-alert)}
+.bot[data-state="op"]{border-color:var(--hud-op);box-shadow:inset 0 0 0 1px var(--hud-op)}
+.bot-head{display:flex;justify-content:space-between;align-items:center;gap:8px}
+.bot-id{display:flex;align-items:center;gap:8px;font-weight:600}
+.bot-id svg{width:22px;height:26px;flex:none}
+.state{font-size:10.5px;letter-spacing:.08em;text-transform:uppercase;padding:3px 7px;border-radius:999px;border:1px solid currentColor;white-space:nowrap}
+.state.auto{color:var(--hud-auto)} .state.help{color:var(--hud-alert)} .state.op{color:var(--hud-op)} .state.wait{color:var(--hud-dim)}
+.station{color:var(--hud-dim);font-size:11.5px}
+.steps{display:grid;grid-template-columns:repeat(6,1fr);gap:3px}
+.steps i{height:6px;border-radius:2px;background:var(--hud-line);display:block}
+.steps i.done{background:var(--hud-dim)}
+.steps i.now{background:var(--hud-auto)}
+.bot[data-state="help"] .steps i.now{background:var(--hud-alert)}
+.bot[data-state="op"] .steps i.now{background:var(--hud-op)}
+.stepname{font-size:12px;min-height:2.6em;line-height:1.3}
+.conf{display:flex;align-items:center;gap:8px;font-size:11px;color:var(--hud-dim)}
+.conf .bar{flex:1;height:5px;background:var(--hud-line);border-radius:3px;position:relative;overflow:hidden}
+.conf .bar span{position:absolute;inset:0 auto 0 0;background:var(--hud-auto);border-radius:3px}
+.conf .bar::after{content:"";position:absolute;left:50%;top:-2px;bottom:-2px;width:1px;background:var(--hud-amber)}
+.bot[data-state="help"] .conf .bar span{background:var(--hud-alert)}
+.bot .btn{padding:7px 10px;font-size:11px}
+.hud-bottom{display:grid;grid-template-columns:minmax(0,1.25fr) minmax(0,1fr);gap:10px;padding:12px 4px 0}
+@media (max-width:900px){.hud-bottom{grid-template-columns:minmax(0,1fr)}}
+.panel{background:var(--hud-panel);border:1px solid var(--hud-line);border-radius:10px;padding:12px;min-width:0}
+.panel h4{margin:0 0 8px;font:600 11px/1.2 var(--f-mono);letter-spacing:.1em;text-transform:uppercase;color:var(--hud-dim)}
+.kpis{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-bottom:10px}
+.kpi{background:var(--hud-bg);border:1px solid var(--hud-line);border-radius:8px;padding:8px 10px;min-width:0}
+.kpi .v{font-family:var(--f-display);font-stretch:80%;font-weight:750;font-size:26px;line-height:1;font-variant-numeric:tabular-nums}
+.kpi .l{font-size:10.5px;color:var(--hud-dim);margin-top:4px;line-height:1.3}
+.kpi.policy .v{color:var(--hud-learn)} .kpi.rate .v{color:var(--hud-amber)} .kpi.ratio .v{color:var(--hud-auto)}
+.chartbox{overflow-x:auto}
+.chartbox svg{display:block;width:100%;min-width:300px;height:auto}
+.log{width:100%;border-collapse:collapse;font-size:11.5px;font-variant-numeric:tabular-nums}
+.log th{text-align:left;color:var(--hud-dim);font-weight:500;padding:4px 6px;border-bottom:1px solid var(--hud-line);white-space:nowrap}
+.log td{padding:5px 6px;border-bottom:1px solid var(--hud-line);vertical-align:top}
+.log tr.new td{color:var(--hud-learn)}
+.logwrap{overflow-x:auto;max-height:228px;overflow-y:auto}
+.note{color:var(--hud-dim);font-size:11px;padding:10px 8px 2px}
+
+/* VR takeover */
+.vr{margin:12px 4px 0;padding:12px;border-radius:12px;background:var(--hud-bg);border:1px solid var(--hud-op)}
+.vr-head{display:flex;flex-wrap:wrap;gap:8px;justify-content:space-between;align-items:center;margin-bottom:10px}
+.vr-head b{color:var(--hud-op)}
+.lens{position:relative;border-radius:22px;overflow:hidden;background:#0B1013}
+.lens canvas{display:block;width:100%;height:auto;aspect-ratio:16/9;touch-action:none;cursor:grab}
+.lens canvas:active{cursor:grabbing}
+.vr-ctrl{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-top:10px}
+.guide{flex:1 1 220px;display:flex;align-items:center;gap:8px;font-size:11.5px;color:var(--hud-dim);min-width:0}
+.guide .bar{flex:1;height:7px;border-radius:4px;background:var(--hud-line);overflow:hidden}
+.guide .bar span{display:block;height:100%;background:var(--hud-op);width:0}
+.vr-status{font-size:12px;margin-top:8px;min-height:1.4em}
+
+/* body sections */
+.cols{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px;margin-top:28px}
+@media (max-width:820px){.cols{grid-template-columns:minmax(0,1fr)}}
+.cols > div{display:flex;flex-direction:column;gap:8px;min-width:0}
+.big{font-family:var(--f-display);font-stretch:80%;font-weight:800;font-size:44px;line-height:1;color:var(--amber-ink)}
+
+.loop{list-style:none;padding:0;margin:28px 0 0;display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:0;counter-reset:l}
+@media (max-width:820px){.loop{grid-template-columns:minmax(0,1fr)}}
+.loop li{position:relative;padding:16px 18px 16px 0;border-top:3px solid var(--line);display:flex;flex-direction:column;gap:6px;min-width:0}
+.loop li::before{counter-increment:l;content:counter(l);font-family:var(--f-mono);font-size:12px;color:var(--muted)}
+.loop li.k-auto{border-top-color:var(--auto)} .loop li.k-ask{border-top-color:var(--alert)} .loop li.k-op{border-top-color:var(--op)} .loop li.k-learn{border-top-color:var(--learn)}
+.loop .back{grid-column:1/-1;font-family:var(--f-mono);font-size:12.5px;color:var(--learn);padding-top:10px;border:0}
+.loop .back::before{content:none}
+
+.stackdiag{margin-top:28px;display:grid;gap:8px}
+.layer{display:grid;grid-template-columns:150px minmax(0,1fr) minmax(0,1fr);gap:16px;align-items:start;padding:16px;border-radius:12px;background:var(--surface);border:1px solid var(--line)}
+@media (max-width:820px){.layer{grid-template-columns:minmax(0,1fr)}}
+.layer .tag{font-family:var(--f-mono);font-size:12px;font-weight:600;letter-spacing:.06em}
+.layer .tag strong{display:block;font-family:var(--f-display);font-size:22px;font-stretch:85%;letter-spacing:0;margin-top:2px}
+.layer.human{border:2px solid var(--op)}
+.layer.human .tag{color:var(--op)}
+.layer .have{font-size:14px;color:var(--muted)}
+.layer .have b{color:var(--ink);font-weight:600}
+
+.sop{margin-top:28px;border:1px solid var(--line);border-radius:12px;overflow:hidden;background:var(--surface)}
+.sop-row{display:grid;grid-template-columns:44px minmax(0,1.1fr) minmax(0,1.4fr) minmax(0,1fr);gap:12px;padding:12px 16px;border-top:1px solid var(--line);align-items:start}
+.sop-row:first-child{border-top:0;background:var(--sunk);font-family:var(--f-mono);font-size:11.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+.sop-row .n{font-family:var(--f-mono);color:var(--muted)}
+.sop-row .risk{font-family:var(--f-mono);font-size:12px}
+.risk-h{color:var(--alert)} .risk-m{color:var(--amber-ink)} .risk-l{color:var(--auto)}
+@media (max-width:720px){.sop-row{grid-template-columns:32px minmax(0,1fr)}.sop-row > :nth-child(3),.sop-row > :nth-child(4){grid-column:2}.sop-row:first-child > :nth-child(3),.sop-row:first-child > :nth-child(4){display:none}}
+
+.rq{margin-top:28px;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px}
+@media (max-width:820px){.rq{grid-template-columns:minmax(0,1fr)}}
+.rq article{padding:18px;border-radius:12px;background:var(--surface);border:1px solid var(--line);display:flex;flex-direction:column;gap:8px;min-width:0}
+.rq article .eyebrow{color:var(--muted)}
+.rq article.c1{border-top:4px solid var(--alert)} .rq article.c2{border-top:4px solid var(--op)} .rq article.c3{border-top:4px solid var(--learn)}
+
+.metrics{margin-top:22px;display:flex;flex-wrap:wrap;gap:8px}
+.metrics span{font-family:var(--f-mono);font-size:12.5px;padding:6px 10px;border-radius:8px;background:var(--sunk);border:1px solid var(--line)}
+
+.tablewrap{overflow-x:auto;margin-top:22px;border:1px solid var(--line);border-radius:12px;background:var(--surface)}
+table.ev{width:100%;border-collapse:collapse;font-size:14.5px;min-width:640px}
+table.ev th{text-align:left;font-family:var(--f-mono);font-size:11.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);font-weight:500;padding:12px 14px;background:var(--sunk);border-bottom:1px solid var(--line)}
+table.ev td{padding:12px 14px;border-bottom:1px solid var(--line);vertical-align:top}
+table.ev tr:last-child td{border-bottom:0}
+table.ev td:first-child{font-weight:600;white-space:nowrap}
+table.ev .yr{font-family:var(--f-mono);font-size:12px;color:var(--muted);white-space:nowrap}
+.ut{font-family:var(--f-mono);font-size:10.5px;letter-spacing:.06em;color:var(--auto);border:1px solid var(--auto);border-radius:4px;padding:1px 5px;margin-left:6px;white-space:nowrap}
+
+blockquote{margin:22px 0 0;padding:16px 18px;border-left:4px solid var(--amber);background:var(--surface);border-radius:0 12px 12px 0;max-width:68ch}
+blockquote p{font-family:var(--f-display);font-stretch:90%;font-size:21px;font-weight:600;line-height:1.3}
+blockquote cite{display:block;margin-top:8px;font-style:normal;font-family:var(--f-mono);font-size:12px;color:var(--muted)}
+
+.why{margin-top:24px;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+@media (max-width:720px){.why{grid-template-columns:minmax(0,1fr)}}
+.why div{padding:14px 16px;border:1px solid var(--line);border-radius:12px;background:var(--surface);min-width:0}
+.why b{display:block;font-family:var(--f-display);font-stretch:90%;font-size:17px;margin-bottom:2px}
+
+.timeline{list-style:none;padding:0;margin:28px 0 0;display:grid;gap:0}
+.timeline li{display:grid;grid-template-columns:150px minmax(0,1fr);gap:18px;padding:16px 0;border-top:1px solid var(--line)}
+@media (max-width:640px){.timeline li{grid-template-columns:minmax(0,1fr);gap:4px}}
+.timeline .when{font-family:var(--f-mono);font-size:13px;font-weight:600;color:var(--amber-ink)}
+.timeline .what b{font-family:var(--f-display);font-stretch:90%;font-size:18px;display:block}
+.timeline .what span{color:var(--muted);font-size:14.5px}
+
+.ask{margin-top:24px;padding:22px;border-radius:14px;background:var(--surface);border:2px solid var(--amber);display:grid;gap:10px;max-width:760px}
+.ask h3{font-size:24px}
+.ask ul{margin:0;padding-left:20px;display:grid;gap:4px}
+
+.refs{margin-top:20px;padding-left:20px;display:grid;gap:8px;font-size:14px;max-width:90ch}
+.refs li{padding-left:4px}
+.refs .muted{font-size:13px}
+footer{margin-top:56px;padding-top:18px;border-top:1px solid var(--line);font-family:var(--f-mono);font-size:12px;color:var(--muted);display:flex;flex-wrap:wrap;gap:12px;justify-content:space-between}
+
+/* AR operator view */
+.arwrap{position:relative;margin-top:24px;border-radius:18px;overflow:hidden;background:var(--hud-bg);aspect-ratio:16/9;max-width:100%;
+  box-shadow:0 1px 0 var(--line),0 24px 60px -30px rgba(0,0,0,.45);font-family:var(--f-mono);color:var(--hud-ink)}
+@media (max-width:700px){.arwrap{aspect-ratio:4/5}}
+.arwrap canvas{display:block;width:100%;height:100%;touch-action:none;cursor:pointer}
+.ar-tags{position:absolute;inset:0;pointer-events:none;overflow:hidden}
+.ar-tag{position:absolute;left:0;top:0;padding:5px 8px;border-radius:8px;font-size:11px;line-height:1.3;white-space:nowrap;
+  background:rgba(14,19,22,.84);border:1px solid var(--hud-auto);color:var(--hud-ink)}
+.ar-tag b{color:var(--hud-auto)}
+.ar-tag.help{border-color:var(--hud-alert)} .ar-tag.help b{color:var(--hud-alert)}
+.ar-tag.op{border-color:var(--hud-op)} .ar-tag.op b{color:var(--hud-op)}
+.ar-tag.idle{border-color:var(--hud-dim)} .ar-tag.idle b{color:var(--hud-amber)}
+.ar-tag.sel{box-shadow:0 0 0 2px var(--hud-amber)}
+.ar-tag.mach{border-color:var(--hud-line);color:var(--hud-dim);font-size:10px;padding:3px 6px}
+.ar-tag .s{color:var(--hud-dim)}
+@media (max-width:700px){.ar-tag .s{display:none}}
+.ar-top{position:absolute;top:10px;left:12px;right:12px;display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap;font-size:11px;pointer-events:none}
+.ar-top span{background:rgba(14,19,22,.72);padding:4px 8px;border-radius:6px}
+.ar-top .rec{color:var(--hud-amber)}
+[hidden]{display:none!important}
+.ar-alert{position:absolute;top:44px;left:50%;transform:translateX(-50%);display:flex;align-items:center;gap:10px;max-width:calc(100% - 24px);
+  padding:8px 10px;border-radius:10px;background:color-mix(in srgb,var(--hud-alert) 22%,var(--hud-bg));border:1px solid var(--hud-alert);font-size:12px}
+.ar-alert span{min-width:0}
+.ar-hint{position:absolute;left:50%;bottom:12px;transform:translateX(-50%);max-width:calc(100% - 24px);text-align:center;font-size:12px;
+  padding:6px 10px;border-radius:8px;background:rgba(14,19,22,.78);pointer-events:none}
+.ar-log{position:absolute;left:12px;bottom:72px;display:grid;gap:3px;font-size:10.5px;pointer-events:none;max-width:60%}
+.ar-log div{background:rgba(14,19,22,.72);padding:3px 7px;border-radius:5px;color:var(--hud-dim)}
+.ar-log div.new{color:var(--hud-learn)}
+@media (max-width:700px){.ar-log{display:none}.ar-alert{left:10px;right:10px;transform:none;max-width:none;top:40px;justify-content:space-between;font-size:12px}.ar-hint{font-size:11px}.ar-tag.mach{display:none}.ar-tag{font-size:10px}}
+.ar-reticle{position:absolute;left:50%;top:50%;width:18px;height:18px;margin:-9px 0 0 -9px;pointer-events:none;opacity:.5;
+  background:linear-gradient(var(--hud-amber),var(--hud-amber)) center/2px 100% no-repeat,linear-gradient(var(--hud-amber),var(--hud-amber)) center/100% 2px no-repeat}
+.ar-ctrl{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
+.ar-ctrl .btn{background:var(--surface);color:var(--ink);border-color:var(--line)}
+.ar-ctrl .btn:hover{border-color:var(--muted)}
+
+@media (prefers-reduced-motion: reduce){*{transition:none!important;animation:none!important}}
+</style>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <symbol id="humanoid" viewBox="0 0 22 26">
+    <circle cx="11" cy="4" r="3.2" fill="currentColor"/>
+    <rect x="6.5" y="8.2" width="9" height="9" rx="2" fill="currentColor"/>
+    <rect x="2.5" y="9" width="3" height="7.5" rx="1.5" fill="currentColor"/>
+    <rect x="16.5" y="9" width="3" height="7.5" rx="1.5" fill="currentColor"/>
+    <rect x="7" y="18" width="3.2" height="7.5" rx="1.5" fill="currentColor"/>
+    <rect x="11.8" y="18" width="3.2" height="7.5" rx="1.5" fill="currentColor"/>
+  </symbol>
+  <symbol id="arm" viewBox="0 0 22 26">
+    <rect x="3" y="21.5" width="12" height="4" rx="1" fill="currentColor"/>
+    <rect x="7.4" y="13" width="3.2" height="9" rx="1.5" fill="currentColor"/>
+    <rect x="7.6" y="11.2" width="11" height="3.2" rx="1.5" fill="currentColor" transform="rotate(-38 9 12.8)"/>
+    <circle cx="9" cy="12.8" r="2.4" fill="currentColor"/>
+    <rect x="15.2" y="2.6" width="3" height="5.8" rx="1.2" fill="currentColor"/>
+    <rect x="18.6" y="2.6" width="2.2" height="4.4" rx="1" fill="currentColor"/>
+  </symbol>
+</svg>
+
+<div class="wrap">
+  <div class="mast">
+    <span><b>Jatin Sikka</b> · MS Mechanical Engineering, UT Austin</span>
+    <span>Proposed MS thesis · Draft for discussion · Nov 2026</span>
+  </div>
+
+  <header class="hero">
+    <span class="eyebrow">Human-in-the-loop learning for robots in manufacturing</span>
+    <h1>Ask, Assist, <span class="amp">Learn</span></h1>
+    <p class="lede">Robots, whether arms or humanoids, won't be 100% reliable on day one in a factory. This thesis builds the loop that gets them there: the robot works through a real shop-floor procedure, <em>asks a remote operator for help only when it is unsure</em>, and learns from every takeover, so one person can supervise more robots each week.</p>
+    <div class="chips">
+      <span class="chip">Long-horizon SOP execution</span>
+      <span class="chip">Uncertainty-triggered help requests</span>
+      <span class="chip">VR / AR teleoperation</span>
+      <span class="chip">Interactive imitation + RL from corrections</span>
+      <span class="chip">Robot arms and humanoids</span>
+      <span class="chip">Isaac Lab · SO-101 · R1 / G1</span>
+    </div>
+  </header>
+
+  <!-- ================= LIVE CONSOLE ================= -->
+  <div class="console" id="console" aria-label="Concept demo: fleet supervisor console">
+    <div class="hud-top">
+      <div class="hud-title">Supervisor view <span>·</span> Cell A machine tending</div>
+      <div class="hud-ctrl">
+        <button class="btn" id="playBtn" type="button">Pause</button>
+        <button class="btn" id="resetBtn" type="button">Reset</button>
+      </div>
+    </div>
+
+    <div class="alertbar" id="alertbar" role="status" aria-live="off">
+      <div class="msg" id="alertMsg"><b>R3 needs help</b> · Step 2 Load into fixture · part misaligned · confidence 0.41</div>
+      <button class="btn op" id="takeBtn" type="button">Take over in VR</button>
+    </div>
+
+    <div class="fleet" id="fleet"></div>
+
+    <div class="vr" id="vr" hidden>
+      <div class="vr-head">
+        <div><b id="vrTitle">Operator in control · R3</b> <span class="muted" id="vrSub" style="color:var(--hud-dim)">Step 2 Load into fixture</span></div>
+        <button class="btn" id="vrCancel" type="button">Hand back without fixing</button>
+      </div>
+      <div class="lens"><canvas id="scene" width="960" height="540" aria-label="Teleoperation view: drag the gripper to line the part up with the fixture slot"></canvas></div>
+      <div class="vr-ctrl">
+        <button class="btn" id="rotL" type="button" aria-label="Rotate part left">Rotate ⟲</button>
+        <button class="btn" id="rotR" type="button" aria-label="Rotate part right">Rotate ⟳</button>
+        <div class="guide"><span>Alignment cue</span><div class="bar"><span id="guideFill"></span></div><span id="guideTxt" class="mono">--</span></div>
+        <button class="btn primary" id="releaseBtn" type="button">Release part</button>
+      </div>
+      <div class="vr-status" id="vrStatus">Drag the gripper (or use arrow keys, Q and E) until the part sits in the slot, then release.</div>
+    </div>
+
+    <div class="hud-bottom">
+      <div class="panel">
+        <h4>Is the robot learning?</h4>
+        <div class="kpis">
+          <div class="kpi policy"><div class="v" id="kPolicy">v0</div><div class="l">Policy version</div></div>
+          <div class="kpi rate"><div class="v" id="kRate">--</div><div class="l">Help requests per hour (fleet)</div></div>
+          <div class="kpi ratio"><div class="v" id="kRatio">--</div><div class="l">Robots one operator could cover</div></div>
+        </div>
+        <div class="chartbox"><svg id="chart" viewBox="0 0 520 200" role="img" aria-label="Help requests per hour by policy version"></svg></div>
+      </div>
+      <div class="panel">
+        <h4>Correction log = new training data</h4>
+        <div class="logwrap">
+          <table class="log"><thead><tr><th>Time</th><th>Robot</th><th>Step</th><th>Reason</th><th>By</th></tr></thead><tbody id="logBody"></tbody></table>
+        </div>
+      </div>
+    </div>
+    <p class="note">Concept demo running in your browser. Robots, failure rates and the chart are simulated to show the idea; they are not experimental results. Click "Take over in VR" to be the operator yourself, or let the simulated operator handle requests.</p>
+  </div>
+
+  <!-- ================= AR OPERATOR VIEW ================= -->
+  <section id="operator">
+    <div class="prose stack">
+      <span class="eyebrow">Operator's view</span>
+      <h2>Guide the fleet, step in when asked</h2>
+      <p class="muted">What a remote operator sees through AR glasses: the same four robots as the console above, each tagged with its current step. R1 and R2 are cobot arms bolted to the CNCs; R3 and R4 are humanoids that walk parts to the presses. Click a humanoid, then a press, to assign it. When a tag turns red, click Assist and drag the part into the fixture yourself; your fix is logged as training data, and after every three fixes the policy retrains and asks for help less often.</p>
+    </div>
+    <div class="arwrap" id="arwrap">
+      <canvas id="arCanvas" aria-label="3D factory floor with two cobot arms and two humanoids tending machines"></canvas>
+      <div class="ar-tags" id="arTags"></div>
+      <div class="ar-reticle" aria-hidden="true"></div>
+      <div class="ar-top"><span class="rec">● AR · Shop floor 1</span><span id="arStatus">Policy v0</span></div>
+      <div class="ar-alert" id="arAlert" hidden><span id="arAlertMsg"></span><button class="btn op" id="arAssist" type="button">Assist</button></div>
+      <div class="ar-log" id="arLog"></div>
+      <div class="ar-hint" id="arHint">Click a humanoid, then a press to assign it. Drag empty space to look around.</div>
+    </div>
+    <div class="ar-ctrl">
+      <button class="btn" id="arAssignBtn" type="button">Assign idle R4 to Press 2</button>
+      <button class="btn" id="arViewBtn" type="button">Reset view</button>
+      <button class="btn" id="arExitBtn" type="button" hidden>Exit takeover</button>
+    </div>
+    <p class="muted" style="font-size:13px;margin-top:8px">Browser simulation for illustration. Motion and failure rates are scripted, not MuJoCo or Isaac physics.</p>
+  </section>
+
+  <!-- ================= PROBLEM ================= -->
+  <section class="prose" id="problem">
+    <div class="stack">
+      <span class="eyebrow">The problem</span>
+      <h2>Reliability is the bottleneck, not the demo</h2>
+      <p>A robot that succeeds 80% of the time at one task makes a good video and a bad employee. On a production line, the rare failures (a buried part, a misaligned fixture, a jammed clamp) stop the cell. Today the fix is a human, either standing next to the robot or teleoperating it full time. Neither scales.</p>
+      <p>Industry has already settled on the shape of the answer: robots run autonomously, a remote human handles the exceptions, and the exceptions become training data. The open questions are research questions: <b>when</b> the robot should ask, <b>how</b> a person takes over without friction, and <b>how much</b> each correction should improve the policy.</p>
+    </div>
+  </section>
+  <div class="wrap">
+    <div class="cols">
+      <div><span class="big">1 : 1</span><b>Today</b><span class="muted">One operator per robot, or a person standing in the cell. Too expensive to deploy.</span></div>
+      <div><span class="big">1 : N</span><b>The goal</b><span class="muted">One operator supervises a fleet and steps in only when a robot asks.</span></div>
+      <div><span class="big">N ↑</span><b>The thesis metric</b><span class="muted">How fast N grows as the robots learn from each takeover.</span></div>
+    </div>
+  </div>
+
+  <!-- ================= LOOP ================= -->
+  <section id="loop">
+    <div class="prose stack">
+      <span class="eyebrow">The idea</span>
+      <h2>One loop: run, ask, assist, learn</h2>
+    </div>
+    <ol class="loop">
+      <li class="k-auto"><h3>Run the SOP</h3><span class="muted">The robot executes a multi-step shop-floor procedure on its own.</span></li>
+      <li class="k-ask"><h3>Know when to ask</h3><span class="muted">Low confidence, novelty or a predicted failure triggers a help request before damage happens.</span></li>
+      <li class="k-op"><h3>Operator takes over</h3><span class="muted">A remote operator jumps into that robot in VR, fixes the step, hands control back.</span></li>
+      <li class="k-learn"><h3>Log the correction</h3><span class="muted">The takeover is saved with the state that caused it: a labeled example of the hard case.</span></li>
+      <li class="k-learn"><h3>Retrain</h3><span class="muted">Interactive imitation learning plus RL fine-tuning focused on where the robot failed.</span></li>
+      <li class="back">↺ Fewer help requests next round, so each operator can cover more robots.</li>
+    </ol>
+  </section>
+
+  <!-- ================= ARCHITECTURE ================= -->
+  <section id="stack">
+    <div class="prose stack">
+      <span class="eyebrow">System design</span>
+      <h2>Three layers of autonomy, one human layer</h2>
+      <p class="muted">Long-horizon tasks become tractable when a planner breaks the procedure into steps, so each learned skill only has to be reliable at one step. The same stack runs on a robot arm or a humanoid; only System 0 changes.</p>
+    </div>
+    <div class="stackdiag">
+      <div class="layer"><div class="tag" style="color:var(--amber-ink)">System 2<strong>SOP planner</strong></div><div>Turns a procedure (or a work ticket) into an ordered list of steps and checks each one off.</div><div class="have">Builds on <b>Sequent</b>: ticket to SOP to skill chain on a simulated Unitree G1.</div></div>
+      <div class="layer"><div class="tag" style="color:var(--auto)">System 1<strong>Skill policy</strong></div><div>A learned policy (VLA or diffusion policy) executes each step and reports how confident it is.</div><div class="have">Builds on <b>Isaac Lab RL</b> and <b>sim-to-real</b> work on the SO-101.</div></div>
+      <div class="layer"><div class="tag" style="color:var(--muted)">System 0<strong>Controller</strong></div><div>Arm or whole-body control turns the policy's targets into safe joint commands.</div><div class="have">Arm controllers for <b>SO-101</b> and cobots; the lab's <b>whole-body controllers</b> for R1 / G1.</div></div>
+      <div class="layer human"><div class="tag">Human layer<strong>Supervisor + takeover</strong></div><div>AR overview of every robot's step and confidence. When one asks, the operator takes over in VR, with haptic cues for contact.</div><div class="have">Builds on <b>Quest VR teleop</b> and the <b>Geomagic Touch force-feedback</b> project.</div></div>
+    </div>
+  </section>
+
+  <!-- ================= TASK ================= -->
+  <section id="task">
+    <div class="prose stack">
+      <span class="eyebrow">Benchmark task</span>
+      <h2>Machine tending: a real SOP with real failure modes</h2>
+      <p class="muted">Loading and unloading a CNC or press is one of the most common manual jobs on a shop floor. It is long-horizon, every step can fail differently, and the steps repeat hundreds of times a shift, which is exactly the data a learning loop needs. Factories already tend machines with cobot arms, so results carry over whether or not humanoids take off.</p>
+    </div>
+    <div class="sop" role="table" aria-label="Machine tending SOP">
+      <div class="sop-row" role="row"><span>#</span><span>Step</span><span>What goes wrong</span><span>Help likelihood</span></div>
+      <div class="sop-row" role="row"><span class="n">1</span><span>Pick part from bin</span><span class="muted">Parts piled or buried, grasp slips</span><span class="risk risk-m">Medium</span></div>
+      <div class="sop-row" role="row"><span class="n">2</span><span>Load into fixture</span><span class="muted">Misalignment, clamp collision, tight tolerance</span><span class="risk risk-h">High</span></div>
+      <div class="sop-row" role="row"><span class="n">3</span><span>Close guard, press start</span><span class="muted">Latch missed, button not registered</span><span class="risk risk-l">Low</span></div>
+      <div class="sop-row" role="row"><span class="n">4</span><span>Wait for cycle</span><span class="muted">Machine fault needs a person</span><span class="risk risk-l">Low</span></div>
+      <div class="sop-row" role="row"><span class="n">5</span><span>Unload finished part</span><span class="muted">Part stuck, hot or burred surface</span><span class="risk risk-m">Medium</span></div>
+      <div class="sop-row" role="row"><span class="n">6</span><span>Place in outbound bin</span><span class="muted">Bin full, drop at the edge</span><span class="risk risk-l">Low</span></div>
+    </div>
+  </section>
+
+  <!-- ================= RESEARCH QUESTIONS ================= -->
+  <section id="rq">
+    <div class="prose stack">
+      <span class="eyebrow">Research questions</span>
+      <h2>Three questions the thesis answers</h2>
+    </div>
+    <div class="rq">
+      <article class="c1"><span class="eyebrow">RQ1 · Ask</span><h3>When should a robot ask for help?</h3><p class="muted">Compare confidence thresholds, novelty detection and learned failure predictors under a fixed budget of operator time.</p></article>
+      <article class="c2"><span class="eyebrow">RQ2 · Assist</span><h3>How should the operator take over?</h3><p class="muted">Design the handover: context shown before takeover, VR control, and whether force or haptic cues give better corrections.</p></article>
+      <article class="c3"><span class="eyebrow">RQ3 · Learn</span><h3>How much does each correction buy?</h3><p class="muted">Interactive imitation (HG-DAgger style) versus RL fine-tuning seeded by corrections, measured per minute of human time.</p></article>
+    </div>
+    <div class="metrics" aria-label="Metrics">
+      <span>SOP success rate</span><span>Help requests per robot-hour</span><span>Operator minutes per robot-hour</span><span>Robots per operator</span><span>Cycle time</span><span>Unsafe events caught before contact</span>
+    </div>
+  </section>
+
+  <!-- ================= EVIDENCE ================= -->
+  <section id="evidence">
+    <div class="prose stack">
+      <span class="eyebrow">Why now</span>
+      <h2>Research and industry are converging on this loop</h2>
+      <p class="muted">The pieces exist separately. What is missing is the full loop on a long-horizon industrial task, on both robot arms and humanoids, measured in operator time.</p>
+    </div>
+
+    <h3 style="margin-top:28px">Research</h3>
+    <div class="tablewrap"><table class="ev">
+      <thead><tr><th>Work</th><th>Venue</th><th>What it shows</th></tr></thead>
+      <tbody>
+        <tr><td><a href="https://arxiv.org/abs/1810.02890">HG-DAgger</a></td><td class="yr">ICRA 2019 · Stanford</td><td>A human expert takes over only when needed; learning from those takeovers beat DAgger and behavior cloning in real driving tests.</td></tr>
+        <tr><td><a href="https://arxiv.org/abs/2109.08273">ThriftyDAgger</a></td><td class="yr">CoRL 2021 · Berkeley</td><td>The robot decides when to ask, requesting help only in novel or risky states, within a fixed human budget.</td></tr>
+        <tr><td><a href="https://arxiv.org/abs/2206.14349">Fleet-DAgger</a></td><td class="yr">CoRL 2022 · Berkeley</td><td>Many robots, few humans. Smart allocation gave up to 8.8x higher return on human effort in a 100-robot simulation.</td></tr>
+        <tr><td><a href="https://rpl.cs.utexas.edu/publications/2023/07/10/rss23-sirius/">Sirius</a><span class="ut">UT Austin</span></td><td class="yr">RSS 2023</td><td>Robots learn on the job from human interventions during deployment; 27% better than prior methods on real hardware.</td></tr>
+        <tr><td><a href="https://rpl.cs.utexas.edu/publications/2024/11/06/liu-corl24-siriusfleet/">Sirius-Fleet</a><span class="ut">UT Austin</span></td><td class="yr">CoRL 2024</td><td>Learned failure predictors decide when a fleet needs a human, and human workload falls as the robots improve.</td></tr>
+        <tr><td><a href="https://arxiv.org/abs/2410.21845">HIL-SERL</a></td><td class="yr">2024 · Berkeley</td><td>Demos plus human corrections plus RL reach near-perfect success on precise assembly after 1 to 2.5 hours of real training.</td></tr>
+        <tr><td><a href="https://pi.website/blog/pistar06">π*0.6 with Recap</a></td><td class="yr">2025 · Physical Intelligence</td><td>Teleoperator corrections plus the robot's own experience more than doubled throughput on the hardest tasks; the robot assembled boxes in a real factory.</td></tr>
+        <tr><td><a href="https://learn-at-deploy.github.io/">Learn@Deploy workshop</a></td><td class="yr">CoRL 2026</td><td>A full CoRL workshop on robots that keep learning after deployment, with Field AI, Bedrock, Physical Intelligence and TRI.</td></tr>
+      </tbody>
+    </table></div>
+
+    <h3 style="margin-top:32px">Industry</h3>
+    <div class="tablewrap"><table class="ev">
+      <thead><tr><th>Company</th><th>Where</th><th>How humans fit in</th></tr></thead>
+      <tbody>
+        <tr><td><a href="https://www.dcvelocity.com/material-handling/robotics/walden-robotics-launches-humanoid-robots-for-manufacturing-and-logistics">Walden Robotics</a></td><td class="yr">Manufacturing · 2026</td><td>Founded by Russ Tedrake (MIT, ex-TRI), launched with $300M; humanoids doing production work at a Toyota plant and learning while they work.</td></tr>
+        <tr><td><a href="https://pi.website/blog/pistar06">Physical Intelligence</a></td><td class="yr">Manipulation · 2025</td><td>Expert corrections are one of the three data sources in their production training recipe.</td></tr>
+        <tr><td><a href="https://www.engadget.com/ai/1x-neo-is-a-20000-home-robot-that-will-learn-chores-via-teleoperation-040252200.html">1X (NEO)</a></td><td class="yr">Humanoid · 2025</td><td>Remote teleoperators do tasks the humanoid can't do yet, and that data trains it to do them alone.</td></tr>
+        <tr><td><a href="https://waymo.com/blog/shorts/advice-not-control-the-role-of-remote-assistance/">Waymo</a></td><td class="yr">Autonomous driving · 2026</td><td>The car asks remote assistance for advice when unsure; humans advise, the robot stays in control. The deployed version of "ask, assist".</td></tr>
+      </tbody>
+    </table></div>
+
+    <blockquote>
+      <p>"If we don't have your data, we can't make the product better."</p>
+      <cite>Bernt Børnich, CEO of 1X, on remote teleoperation of NEO (Engadget, Oct 2025)</cite>
+    </blockquote>
+  </section>
+
+  <!-- ================= WHY ME ================= -->
+  <section id="why">
+    <div class="prose stack">
+      <span class="eyebrow">Why me</span>
+      <h2>I've worked on both sides of this loop</h2>
+    </div>
+    <div class="why">
+      <div><b>The factory floor</b><span class="muted">Two Tesla internships (Body in White data pipelines, Plastics tooling) and an assembly-cell transfer at Fortive. I know what a cell, an SOP and a defect look like.</span></div>
+      <div><b>Long-horizon SOP execution</b><span class="muted">Sequent: a simulated G1 reads a plant-floor ticket, retrieves the right SOP and runs it as walk, pick, place and press skills.</span></div>
+      <div><b>Sim-to-real</b><span class="muted">PPO policies in Isaac Lab deployed on a physical SO-101; fixed hardware oscillation by fitting sim actuators to real servo data.</span></div>
+      <div><b>Teleoperation and haptics</b><span class="muted">Quest VR teleop for an R1 + Revo2 hand scene, and Geomagic Touch force-feedback teleop of a robot arm and gripper.</span></div>
+    </div>
+  </section>
+
+  <!-- ================= PLAN ================= -->
+  <section id="plan">
+    <div class="prose stack">
+      <span class="eyebrow">Plan to December 2027</span>
+      <h2>Simulation first, one real arm, scoped for an MS</h2>
+    </div>
+    <ol class="timeline">
+      <li><span class="when">Dec 2026 – Jan 2027</span><span class="what"><b>Factory twin + teleop</b><span>Machine-tending cell in Isaac Sim with a robot arm and a humanoid; Quest teleop; first 100 demonstrations.</span></span></li>
+      <li><span class="when">Spring 2027</span><span class="what"><b>Baseline policy + help requests</b><span>Train per-step skill policies; add confidence and failure prediction; first takeover loop on one robot.</span></span></li>
+      <li><span class="when">Summer 2027</span><span class="what"><b>Learning from corrections</b><span>Interactive imitation vs. RL from corrections; measure help requests per hour across retraining rounds.</span></span></li>
+      <li><span class="when">Fall 2027</span><span class="what"><b>Scale + real demo</b><span>Two to three robots supervised by one operator in sim; the same loop on real SO-101 arms; write the thesis.</span></span></li>
+      <li><span class="when">Dec 2027</span><span class="what"><b>Defend</b><span>Thesis, open-source factory twin and teleop pipeline, workshop paper.</span></span></li>
+    </ol>
+    <p class="muted" style="margin-top:14px;max-width:68ch">Stretch goal: the full multi-robot AR supervisor console shown at the top of this page, connected to Teleworker-style remote operations.</p>
+  </section>
+
+  <!-- ================= FIT ================= -->
+  <section id="fit">
+    <div class="prose stack">
+      <span class="eyebrow">Fit with the lab</span>
+      <h2>What the lab gets</h2>
+      <ul style="margin:0;padding-left:20px;display:grid;gap:6px">
+        <li><b>Reusable infrastructure:</b> a factory twin, a VR teleop and data-collection pipeline, and a correction logger other students can build on.</li>
+        <li><b>A fundable story:</b> remote operations for industrial robots is what manufacturers, humanoid companies and remote-presence companies such as Teleworker are paying to solve.</li>
+        <li><b>Low cost:</b> I am funded through a TA appointment and can start in January.</li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- ================= REFS ================= -->
+  <section id="refs">
+    <div class="prose"><span class="eyebrow">References</span></div>
+    <ol class="refs">
+      <li>Kelly, Sidrane, Driggs-Campbell, Kochenderfer. <a href="https://arxiv.org/abs/1810.02890">HG-DAgger: Interactive Imitation Learning with Human Experts</a>. ICRA 2019.</li>
+      <li>Hoque, Balakrishna, Novoseller, Wilcox, Brown, Goldberg. <a href="https://arxiv.org/abs/2109.08273">ThriftyDAgger: Budget-Aware Novelty and Risk Gating for Interactive Imitation Learning</a>. CoRL 2021.</li>
+      <li>Hoque, Chen, Sharma, Dharmarajan, Thananjeyan, Abbeel, Goldberg. <a href="https://proceedings.mlr.press/v205/hoque23a.html">Fleet-DAgger: Interactive Robot Fleet Learning with Scalable Human Supervision</a>. CoRL 2022.</li>
+      <li>Liu, Nasiriany, Zhang, Bao, Zhu. <a href="https://rpl.cs.utexas.edu/publications/2023/07/10/rss23-sirius/">Robot Learning on the Job: Human-in-the-Loop Autonomy and Learning During Deployment</a>. RSS 2023.</li>
+      <li>Liu, Zhang, Betala, Zhang, Liu, Ding, Zhu. <a href="https://rpl.cs.utexas.edu/publications/2024/11/06/liu-corl24-siriusfleet/">Multi-Task Interactive Robot Fleet Learning with Visual World Models</a>. CoRL 2024.</li>
+      <li>Luo, Xu, Wu, Levine. <a href="https://arxiv.org/abs/2410.21845">Precise and Dexterous Robotic Manipulation via Human-in-the-Loop Reinforcement Learning</a>. 2024.</li>
+      <li>Physical Intelligence. <a href="https://pi.website/blog/pistar06">π*0.6: a VLA That Learns From Experience</a>. 2025.</li>
+      <li>Learn@Deploy: Robot Learning at Deployment. <a href="https://learn-at-deploy.github.io/">CoRL 2026 workshop</a>.</li>
+      <li><a href="https://www.dcvelocity.com/material-handling/robotics/walden-robotics-launches-humanoid-robots-for-manufacturing-and-logistics">Walden Robotics launches humanoid robots for manufacturing and logistics</a>. DC Velocity, July 2026.</li>
+      <li><a href="https://www.engadget.com/ai/1x-neo-is-a-20000-home-robot-that-will-learn-chores-via-teleoperation-040252200.html">1X Neo is a $20,000 home robot that will learn chores via teleoperation</a>. Engadget, Oct 2025.</li>
+      <li><a href="https://waymo.com/blog/shorts/advice-not-control-the-role-of-remote-assistance/">Advice, not control: the role of remote assistance</a>. Waymo, Feb 2026.</li>
+    </ol>
+  </section>
+
+  <footer>
+    <span>Jatin Sikka · <a href="https://jatinsikka.me">jatinsikka.me</a> · <a href="https://github.com/jatinsikka">github.com/jatinsikka</a></span>
+    <span>Concept and plan for discussion. Demo is simulated.</span>
+  </footer>
+</div>
+
+<script>
+(function(){
+  "use strict";
+  var STEPS = [
+    {name:"Pick part from bin", dur:3, p:0.12, why:["parts buried in bin","grasp slipped"]},
+    {name:"Load into fixture", dur:3, p:0.24, why:["part misaligned with fixture","collision with clamp"]},
+    {name:"Close guard, press start", dur:1, p:0.06, why:["guard latch missed"]},
+    {name:"Wait for machine cycle", dur:5, p:0.0, why:[]},
+    {name:"Unload finished part", dur:3, p:0.15, why:["part stuck in fixture"]},
+    {name:"Place in outbound bin", dur:2, p:0.08, why:["bin edge collision"]}
+  ];
+  var STATIONS = ["CNC 1 · cobot arm","CNC 2 · cobot arm","Press 1 · humanoid","Press 2 · humanoid"];
+  var TYPES = ["arm","arm","humanoid","humanoid"];
+  var DECAY = 0.55, RETRAIN_EVERY = 4, MAX_V = 5, TICK_MS = 650, AUTO_DELAY = 5, OP_TICKS = 3;
+  var reduce = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+  var S;
+  function fresh(){
+    S = {t: 0, v: 0, sinceRetrain: 0, playing: !reduce, rounds: [{v:0, help:0, minutes:0}], log: [], queue: [], userBot: null, lastMsg: "",
+      bots: [0,1,2,3].map(function(i){ return {id:"R"+(i+1), station:STATIONS[i], step:[0,3,1,4][i], prog:[1,2,0,1][i], conf:0.9, state:"auto", fail:null, wait:0, opLeft:0, cycles:0}; })};
+    // Start with R3 needing help so the key moment is visible immediately
+    var r3 = S.bots[2]; r3.step = 1; r3.prog = 1; r3.state = "help"; r3.conf = 0.41; r3.fail = {reason:"part misaligned with fixture"}; r3.wait = 0;
+    S.queue.push(2); S.rounds[0].help = 1;
+    S.bots.forEach(function(b){ if(b.state==="auto") planFail(b); });
+  }
+  function rnd(a,b){ return a + Math.random()*(b-a); }
+  function failP(step){ return STEPS[step].p * Math.pow(DECAY, S.v); }
+  function planFail(b){
+    var st = STEPS[b.step];
+    b.fail = null;
+    if (Math.random() < failP(b.step) && st.why.length){
+      b.fail = {at: Math.max(1, Math.floor(rnd(1, st.dur))), reason: st.why[Math.floor(Math.random()*st.why.length)]};
+    }
+  }
+  function clock(){ var m = 8*60 + S.t; var h = Math.floor(m/60)%24, mm = m%60; return (h<10?"0":"")+h+":"+(mm<10?"0":"")+mm; }
+
+  function tick(){
+    S.t += 1;
+    var round = S.rounds[S.rounds.length-1]; round.minutes += 1;
+    S.bots.forEach(function(b, i){
+      if (b.state === "auto"){
+        b.prog += 1;
+        b.conf = Math.min(0.97, Math.max(0.62, b.conf + rnd(-0.05, 0.05)));
+        if (b.fail && b.prog >= b.fail.at){
+          b.state = "help"; b.conf = rnd(0.32, 0.47); b.wait = 0;
+          S.queue.push(i); round.help += 1;
+          return;
+        }
+        if (b.prog >= STEPS[b.step].dur){
+          b.prog = 0; b.step = (b.step + 1) % STEPS.length;
+          if (b.step === 0) b.cycles += 1;
+          b.conf = rnd(0.78, 0.95);
+          planFail(b);
+        }
+      } else if (b.state === "help"){
+        if (S.userBot === i) return;
+        b.wait += 1;
+        if (b.wait >= AUTO_DELAY && !anyOp()){ b.state = "op"; b.opLeft = OP_TICKS; removeQ(i); }
+      } else if (b.state === "op"){
+        if (S.userBot === i) return;
+        b.opLeft -= 1;
+        if (b.opLeft <= 0) resolve(i, "Sim operator", false);
+      }
+    });
+    render();
+  }
+  function anyOp(){ return S.bots.some(function(b){ return b.state === "op"; }); }
+  function removeQ(i){ S.queue = S.queue.filter(function(q){ return q !== i; }); }
+
+  function resolve(i, by, fromUser){
+    var b = S.bots[i];
+    S.log.unshift({time: clock(), id: b.id, step: b.step+1, reason: b.fail ? b.fail.reason : "operator check", by: by, isNew: true});
+    S.log.forEach(function(e, k){ if (k>0) e.isNew = false; });
+    b.state = "auto"; b.fail = null; b.conf = rnd(0.8, 0.92); b.prog = STEPS[b.step].dur - 1; b.wait = 0;
+    removeQ(i);
+    S.sinceRetrain += 1;
+    if (S.sinceRetrain >= RETRAIN_EVERY && S.v < MAX_V){
+      S.v += 1; S.sinceRetrain = 0;
+      S.rounds.push({v:S.v, help:0, minutes:0});
+      S.lastMsg = "Policy v"+S.v+" retrained on "+S.log.length+" corrections";
+    }
+  }
+
+  // ---------- render ----------
+  var $ = function(id){ return document.getElementById(id); };
+  var fleetEl = $("fleet");
+  function stateLabel(s){ return {auto:"Autonomous", help:"Needs help", op:"Operator"}[s]; }
+  function render(){
+    var html = "";
+    S.bots.forEach(function(b, i){
+      var steps = "";
+      for (var k=0;k<6;k++) steps += '<i class="'+(k<b.step?"done":(k===b.step?"now":""))+'"></i>';
+      var conf = Math.round(b.conf*100);
+      var action = b.state==="help" ? '<button class="btn op" type="button" data-take="'+i+'">Take over</button>' : "";
+      var sub = b.state==="help" ? ("Reason: "+b.fail.reason) : (b.state==="op" ? (S.userBot===i ? "You are in control" : "Sim operator in control") : ("Cycles done: "+b.cycles));
+      html += '<div class="bot" data-state="'+b.state+'">'+
+        '<div class="bot-head"><div class="bot-id"><svg aria-hidden="true" style="color:'+(b.state==="help"?"var(--hud-alert)":b.state==="op"?"var(--hud-op)":"var(--hud-auto)")+'"><use href="#'+TYPES[i]+'"/></svg>'+b.id+'</div>'+
+        '<span class="state '+b.state+'">'+stateLabel(b.state)+'</span></div>'+
+        '<div class="station">'+b.station+'</div>'+
+        '<div class="steps" aria-label="Step '+(b.step+1)+' of 6">'+steps+'</div>'+
+        '<div class="stepname">Step '+(b.step+1)+' · '+STEPS[b.step].name+'<br><span style="color:var(--hud-dim)">'+sub+'</span></div>'+
+        '<div class="conf"><span>conf</span><div class="bar"><span style="width:'+conf+'%"></span></div><span>'+(b.conf).toFixed(2)+'</span></div>'+
+        action+'</div>';
+    });
+    fleetEl.innerHTML = html;
+
+    // alert bar
+    var ab = $("alertbar"), am = $("alertMsg"), tb = $("takeBtn");
+    var waiting = S.queue.filter(function(i){ return S.bots[i].state==="help"; });
+    if (waiting.length){
+      var b = S.bots[waiting[0]];
+      ab.classList.remove("calm");
+      am.innerHTML = '<b>'+b.id+' needs help</b> · Step '+(b.step+1)+' '+STEPS[b.step].name+' · '+b.fail.reason+' · confidence '+b.conf.toFixed(2)+(waiting.length>1?' · '+(waiting.length-1)+' more waiting':'');
+      tb.hidden = false; tb.dataset.bot = waiting[0];
+      tb.disabled = S.userBot !== null;
+    } else {
+      ab.classList.add("calm");
+      var opB = S.bots.filter(function(b){return b.state==="op";})[0];
+      am.innerHTML = opB ? ('<b>'+opB.id+' under operator control</b> · correcting step '+(opB.step+1)) :
+        ('<b>All robots autonomous</b> · '+clock()+' · '+(S.lastMsg || "policy v"+S.v+" running"));
+      tb.hidden = true;
+    }
+
+    // KPIs
+    var r = currentRate();
+    $("kPolicy").textContent = "v"+S.v;
+    $("kRate").textContent = r === null ? "--" : r.toFixed(1);
+    var perRobot = r === null ? null : r/4;
+    var ratio = perRobot === null ? null : (perRobot <= 0.05 ? 50 : Math.min(50, Math.floor(60 / (perRobot*3))));
+    $("kRatio").textContent = ratio === null ? "--" : (ratio >= 50 ? "50+" : ratio);
+
+    // log
+    var lb = $("logBody");
+    if (!S.log.length){
+      lb.innerHTML = '<tr><td colspan="5" style="color:var(--hud-dim)">No corrections yet. Each takeover appears here with the state that caused it.</td></tr>';
+    } else {
+      lb.innerHTML = S.log.slice(0,12).map(function(e){
+        return '<tr class="'+(e.isNew?"new":"")+'"><td>'+e.time+'</td><td>'+e.id+'</td><td>'+e.step+'</td><td>'+e.reason+'</td><td>'+e.by+'</td></tr>';
+      }).join("");
+    }
+    drawChart();
+    $("playBtn").textContent = S.playing ? "Pause" : "Play";
+  }
+  function rateOf(rd){ return rd.minutes < 6 ? null : rd.help / (rd.minutes/60); }
+  function currentRate(){
+    for (var k=S.rounds.length-1;k>=0;k--){ var x = rateOf(S.rounds[k]); if (x!==null) return x; }
+    return null;
+  }
+
+  // ---------- chart ----------
+  function drawChart(){
+    var svg = $("chart"); var W=520,H=200, L=40, R=12, T=14, B=34;
+    var vals = []; for (var k=0;k<=MAX_V;k++){ var rd = S.rounds[k]; vals.push(rd ? rateOf(rd) : null); }
+    var maxV = 12; vals.forEach(function(v){ if (v!==null && v>maxV) maxV = Math.ceil(v/4)*4; });
+    var plotW = W-L-R, plotH = H-T-B, bw = plotW/(MAX_V+1);
+    var out = "";
+    var ticks = [0, maxV/2, maxV];
+    ticks.forEach(function(tv){
+      var y = T + plotH - (tv/maxV)*plotH;
+      out += '<line x1="'+L+'" x2="'+(W-R)+'" y1="'+y+'" y2="'+y+'" stroke="var(--hud-line)" stroke-width="1"/>';
+      out += '<text x="'+(L-6)+'" y="'+(y+4)+'" fill="var(--hud-dim)" font-size="10" text-anchor="end" font-family="IBM Plex Mono, monospace">'+(Math.round(tv*10)/10)+'</text>';
+    });
+    vals.forEach(function(v, k){
+      var x = L + k*bw + bw*0.22, w = bw*0.56;
+      var cur = k === S.v;
+      if (v === null){
+        out += '<rect x="'+x+'" y="'+(T+plotH-2)+'" width="'+w+'" height="2" fill="var(--hud-line)"/>';
+      } else {
+        var h = Math.max(2,(v/maxV)*plotH);
+        out += '<rect x="'+x+'" y="'+(T+plotH-h)+'" width="'+w+'" height="'+h+'" rx="3" fill="'+(cur?"var(--hud-amber)":"var(--hud-learn)")+'" opacity="'+(cur?1:0.75)+'"/>';
+        out += '<text x="'+(x+w/2)+'" y="'+(T+plotH-h-5)+'" fill="var(--hud-ink)" font-size="10.5" text-anchor="middle" font-family="IBM Plex Mono, monospace">'+v.toFixed(1)+'</text>';
+      }
+      out += '<text x="'+(x+w/2)+'" y="'+(H-B+16)+'" fill="'+(cur?"var(--hud-amber)":"var(--hud-dim)")+'" font-size="11" text-anchor="middle" font-family="IBM Plex Mono, monospace">v'+k+'</text>';
+    });
+    out += '<text x="'+L+'" y="'+(H-4)+'" fill="var(--hud-dim)" font-size="10" font-family="IBM Plex Mono, monospace">Help requests per hour, by policy version (simulated)</text>';
+    svg.innerHTML = out;
+  }
+
+  // ---------- VR takeover ----------
+  var cv = $("scene"), ctx = cv.getContext("2d");
+  var VR = null; // {bot, gx, gy, ang, start, moves, done}
+  var SLOT = {x:700, y:300, w:132, h:78};
+  function openVR(i){
+    var b = S.bots[i];
+    if (b.state !== "help") return;
+    S.userBot = i; b.state = "op"; removeQ(i);
+    VR = {bot:i, gx: 290, gy: 170, ang: rnd(14, 22) * (Math.random()<0.5?-1:1), start: Date.now(), moves: 0, done:false, drag:null};
+    $("vr").hidden = false;
+    $("vrTitle").textContent = "Operator in control · "+b.id;
+    $("vrSub").textContent = "Step "+(b.step+1)+" "+STEPS[b.step].name+" · "+b.fail.reason;
+    $("vrStatus").textContent = "Drag the gripper (or use arrow keys, Q and E) until the part sits in the slot, then release.";
+    sizeCanvas(); draw(); render();
+    $("vr").scrollIntoView({behavior: reduce ? "auto" : "smooth", block:"nearest"});
+    cv.focus({preventScroll:true});
+  }
+  function closeVR(fixed){
+    if (!VR) return;
+    var i = VR.bot, b = S.bots[i];
+    if (fixed){
+      var secs = Math.max(1, Math.round((Date.now()-VR.start)/1000));
+      resolve(i, "You ("+secs+" s)", true);
+    } else {
+      b.state = "help"; b.wait = 0; S.queue.unshift(i);
+    }
+    S.userBot = null; VR = null;
+    $("vr").hidden = true; render();
+  }
+  function errs(){
+    var px = SLOT.x - 66 + 66, py = SLOT.y; // slot centre
+    var dx = VR.gx - px, dy = (VR.gy + 62) - py; // part hangs 62 below gripper centre
+    return {dx:dx, dy:dy, da:VR.ang, mm: Math.round(Math.hypot(dx,dy)*0.5), ok: Math.abs(dx)<9 && Math.abs(dy)<9 && Math.abs(VR.ang)<=3};
+  }
+  function sizeCanvas(){
+    var dpr = Math.min(2, window.devicePixelRatio || 1);
+    var w = cv.clientWidth || 960; var h = Math.round(w*9/16);
+    cv.width = Math.round(w*dpr); cv.height = Math.round(h*dpr);
+    ctx.setTransform(cv.width/960, 0, 0, cv.height/540, 0, 0);
+  }
+  function draw(){
+    if (!VR) return;
+    var c = ctx;
+    c.clearRect(0,0,960,540);
+    // floor grid
+    c.fillStyle = "#0B1013"; c.fillRect(0,0,960,540);
+    c.strokeStyle = "rgba(130,150,255,0.10)"; c.lineWidth = 1;
+    for (var x=0;x<=960;x+=48){ c.beginPath(); c.moveTo(x,0); c.lineTo(x,540); c.stroke(); }
+    for (var y=0;y<=540;y+=48){ c.beginPath(); c.moveTo(0,y); c.lineTo(960,y); c.stroke(); }
+    // machine fixture
+    c.fillStyle = "#1C252B"; c.fillRect(560, 250, 300, 190);
+    c.fillStyle = "#26323A"; c.fillRect(560, 250, 300, 14);
+    c.fillStyle = "#06090B"; c.fillRect(SLOT.x-SLOT.w/2, SLOT.y-SLOT.h/2, SLOT.w, SLOT.h);
+    c.strokeStyle = "#F2B71C"; c.setLineDash([8,6]); c.lineWidth = 2;
+    c.strokeRect(SLOT.x-SLOT.w/2, SLOT.y-SLOT.h/2, SLOT.w, SLOT.h); c.setLineDash([]);
+    c.fillStyle = "#F2B71C"; c.font = "600 15px IBM Plex Mono, monospace"; c.fillText("FIXTURE SLOT", 600, 420);
+    // clamps
+    c.fillStyle = "#3A4952"; c.fillRect(SLOT.x-SLOT.w/2-22, SLOT.y-30, 16, 60); c.fillRect(SLOT.x+SLOT.w/2+6, SLOT.y-30, 16, 60);
+    var e = errs();
+    // ghost target
+    c.save(); c.translate(SLOT.x, SLOT.y); c.strokeStyle = e.ok ? "rgba(63,199,188,0.9)" : "rgba(220,230,228,0.18)"; c.lineWidth = 2;
+    c.strokeRect(-52,-30,104,60); c.restore();
+    // arm
+    c.strokeStyle = "#8A9AA2"; c.lineWidth = 16; c.lineCap = "round";
+    c.beginPath(); c.moveTo(470, -30); c.lineTo(VR.gx - 120, VR.gy - 120); c.lineTo(VR.gx, VR.gy - 40); c.stroke();
+    // gripper + part (rotated)
+    c.save(); c.translate(VR.gx, VR.gy); c.rotate(VR.ang*Math.PI/180);
+    c.fillStyle = "#DCE6E4"; c.fillRect(-46,-40,92,16);
+    c.fillRect(-56,-30,12,62); c.fillRect(44,-30,12,62);
+    c.fillStyle = e.ok ? "#3FC7BC" : "#8296FF"; c.fillRect(-50, 32, 100, 60);
+    c.fillStyle = "rgba(14,19,22,0.55)"; c.fillRect(-20, 52, 40, 20);
+    c.restore();
+    // HUD text
+    c.fillStyle = "#DCE6E4"; c.font = "600 16px IBM Plex Mono, monospace";
+    c.fillText("OPERATOR VIEW", 24, 34);
+    c.fillStyle = "#8A9AA2"; c.font = "14px IBM Plex Mono, monospace";
+    c.fillText("offset "+e.mm+" mm   angle "+VR.ang.toFixed(0)+"°", 24, 58);
+    if (e.ok){ c.fillStyle = "#3FC7BC"; c.fillText("ALIGNED · release to seat part", 24, 82); }
+    // guide bar
+    var score = Math.max(0, 1 - (Math.hypot(e.dx, e.dy)/420) - Math.abs(VR.ang)/60);
+    $("guideFill").style.width = Math.round(score*100) + "%";
+    $("guideTxt").textContent = e.mm + " mm · " + VR.ang.toFixed(0) + "°";
+  }
+  function toScene(ev){
+    var r = cv.getBoundingClientRect();
+    return {x: (ev.clientX - r.left) * 960 / r.width, y: (ev.clientY - r.top) * 540 / r.height};
+  }
+  cv.tabIndex = 0;
+  cv.addEventListener("pointerdown", function(ev){ if(!VR) return; cv.setPointerCapture(ev.pointerId); var p = toScene(ev); VR.drag = {x:p.x, y:p.y, gx:VR.gx, gy:VR.gy}; });
+  cv.addEventListener("pointermove", function(ev){ if(!VR || !VR.drag) return; var p = toScene(ev);
+    VR.gx = Math.min(900, Math.max(60, VR.drag.gx + p.x - VR.drag.x)); VR.gy = Math.min(420, Math.max(80, VR.drag.gy + p.y - VR.drag.y)); VR.moves++; draw(); });
+  cv.addEventListener("pointerup", function(){ if (VR) VR.drag = null; });
+  cv.addEventListener("pointercancel", function(){ if (VR) VR.drag = null; });
+  cv.addEventListener("keydown", function(ev){
+    if (!VR) return; var s = ev.shiftKey ? 2 : 8, used = true;
+    if (ev.key==="ArrowLeft") VR.gx -= s; else if (ev.key==="ArrowRight") VR.gx += s;
+    else if (ev.key==="ArrowUp") VR.gy -= s; else if (ev.key==="ArrowDown") VR.gy += s;
+    else if (ev.key==="q"||ev.key==="Q") VR.ang -= 1; else if (ev.key==="e"||ev.key==="E") VR.ang += 1;
+    else if (ev.key==="Enter") release(); else used = false;
+    if (used){ ev.preventDefault(); draw(); }
+  });
+  $("rotL").addEventListener("click", function(){ if (VR){ VR.ang -= 2; draw(); } });
+  $("rotR").addEventListener("click", function(){ if (VR){ VR.ang += 2; draw(); } });
+  function release(){
+    if (!VR) return; var e = errs();
+    if (!e.ok){ $("vrStatus").textContent = "Not seated yet: "+e.mm+" mm off and "+Math.abs(VR.ang).toFixed(0)+"° off. Keep adjusting."; return; }
+    $("vrStatus").textContent = "Part seated. Correction saved as training data. Handing control back to the robot.";
+    VR.gx = SLOT.x; VR.gy = SLOT.y - 62; VR.ang = 0; draw();
+    setTimeout(function(){ closeVR(true); }, reduce ? 0 : 900);
+  }
+  $("releaseBtn").addEventListener("click", release);
+  $("vrCancel").addEventListener("click", function(){ closeVR(false); });
+  window.addEventListener("resize", function(){ if (VR){ sizeCanvas(); draw(); } });
+
+  // ---------- controls ----------
+  fleetEl.addEventListener("click", function(ev){ var t = ev.target.closest("[data-take]"); if (t && S.userBot===null) openVR(+t.dataset.take); });
+  $("takeBtn").addEventListener("click", function(){ if (S.userBot===null) openVR(+this.dataset.bot); });
+  var timer = null;
+  function setPlay(on){ S.playing = on; if (timer){ clearInterval(timer); timer = null; } if (on) timer = setInterval(tick, TICK_MS); render(); }
+  $("playBtn").addEventListener("click", function(){ setPlay(!S.playing); });
+  $("resetBtn").addEventListener("click", function(){ if (VR){ VR = null; $("vr").hidden = true; } fresh(); setPlay(!reduce); });
+  document.addEventListener("visibilitychange", function(){ if (document.hidden && timer){ clearInterval(timer); timer=null; } else if (!document.hidden && S.playing && !timer){ timer = setInterval(tick, TICK_MS); } });
+
+  fresh();
+  // seed one prior round so the chart is not empty at rest
+  S.rounds[0].minutes = 30; S.rounds[0].help = 4;
+  S.log = [
+    {time:"07:41", id:"R1", step:1, reason:"parts buried in bin", by:"Sim operator", isNew:false},
+    {time:"07:52", id:"R4", step:2, reason:"collision with clamp", by:"Sim operator", isNew:false}
+  ];
+  S.sinceRetrain = 2;
+  setPlay(S.playing);
+})();
+</script>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+(function(){
+  "use strict";
+  var $ = function(id){ return document.getElementById(id); };
+  var wrap = $("arwrap"), cv = $("arCanvas"), tagsEl = $("arTags"), hint = $("arHint");
+  if (!window.THREE){ hint.textContent = "The 3D view could not load in this browser."; return; }
+  var T = window.THREE, V = T.Vector3;
+  var reduce = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  var renderer;
+  try { renderer = new T.WebGLRenderer({canvas: cv, antialias: true}); }
+  catch(e){ hint.textContent = "WebGL is not available here, so the 3D view can't run."; return; }
+  renderer.setPixelRatio(Math.min(2, window.devicePixelRatio || 1));
+
+  var scene = new T.Scene();
+  scene.background = new T.Color(0x0e1316);
+  scene.fog = new T.Fog(0x0e1316, 28, 60);
+  var camera = new T.PerspectiveCamera(46, 16/9, 0.1, 200);
+  scene.add(new T.HemisphereLight(0xdce6e4, 0x0b1013, 0.9));
+  var sun = new T.DirectionalLight(0xffffff, 0.75); sun.position.set(6, 14, 8); scene.add(sun);
+
+  function mat(c, o){ var p = {color: c, roughness: 0.85, metalness: 0.1}; if (o) for (var k in o) p[k] = o[k]; return new T.MeshStandardMaterial(p); }
+  function box(w, h, d, m){ return new T.Mesh(new T.BoxGeometry(w, h, d), m); }
+  function rnd(a, b){ return a + Math.random()*(b-a); }
+  function partMesh(){ return box(0.24, 0.16, 0.24, mat(0x8296ff, {roughness: 0.4})); }
+
+  // floor, grid, cell lines
+  var floor = new T.Mesh(new T.PlaneGeometry(46, 28), mat(0x151c21)); floor.rotation.x = -Math.PI/2; scene.add(floor);
+  var grid = new T.GridHelper(46, 46, 0x26323a, 0x1a2329); grid.position.y = 0.003; scene.add(grid);
+  var amberM = new T.MeshBasicMaterial({color: 0xf2b71c});
+  var line1 = box(24, 0.01, 0.07, amberM); line1.position.set(1.2, 0.01, -2.1); scene.add(line1);
+  var line2 = box(0.07, 0.01, 4.2, amberM); line2.position.set(0.15, 0.01, -4.2); scene.add(line2);
+
+  // machines
+  var machines = {};
+  function makeMachine(key, name, x, z){
+    var g = new T.Group(); g.position.set(x, 0, z);
+    var body = box(2.2, 1.9, 1.6, mat(0x2b3a42)); body.position.y = 0.95; g.add(body);
+    var top = box(2.3, 0.12, 1.7, mat(0x3a4952)); top.position.y = 1.96; g.add(top);
+    var door = box(1.1, 0.9, 0.04, mat(0x0b1114, {roughness: 0.3, metalness: 0.4})); door.position.set(-0.35, 1.15, 0.81); g.add(door);
+    var shelf = box(0.9, 0.06, 0.55, mat(0x3a4952)); shelf.position.set(0.55, 1.0, 1.05); g.add(shelf);
+    var fixture = box(0.34, 0.06, 0.34, mat(0x0b1114)); fixture.position.set(0.55, 1.06, 1.05); g.add(fixture);
+    var light = new T.Mesh(new T.SphereGeometry(0.09, 16, 12), new T.MeshBasicMaterial({color: 0x3a4952})); light.position.set(0.9, 2.12, 0.5); g.add(light);
+    var loaded = partMesh(); loaded.position.set(0.55, 1.17, 1.05); loaded.visible = false; g.add(loaded);
+    g.traverse(function(o){ o.userData.machine = key; });
+    scene.add(g);
+    var tag = document.createElement("div"); tag.className = "ar-tag mach"; tagsEl.appendChild(tag);
+    machines[key] = {key: key, name: name, group: g, light: light, loaded: loaded, tag: tag,
+      stand: new V(x + 0.55, 0, z + 1.85), fixture: new V(x + 0.55, 1.12, z + 1.05), running: 0, owner: null};
+  }
+  makeMachine("cnc1", "CNC 1", -8.5, -6);
+  makeMachine("cnc2", "CNC 2", -3.5, -6);
+  makeMachine("press1", "Press 1", 2, -6);
+  makeMachine("press2", "Press 2", 6.5, -6);
+
+  // humanoid bins (right side of the cell)
+  function makeBin(x, z, color, name){
+    var g = new T.Group(); g.position.set(x, 0, z);
+    var b = box(1.6, 0.7, 1.3, mat(color)); b.position.y = 0.35; g.add(b);
+    for (var i = 0; i < 5; i++){ var p = partMesh(); p.position.set(rnd(-0.5, 0.5), 0.78, rnd(-0.4, 0.4)); p.rotation.y = rnd(0, 1); g.add(p); }
+    scene.add(g);
+    var tag = document.createElement("div"); tag.className = "ar-tag mach"; tag.textContent = name; tagsEl.appendChild(tag);
+    return {pos: new V(x - 1.25, 0, z), top: new V(x, 1.2, z), tag: tag};
+  }
+  var RAW = makeBin(10, -0.8, 0x6b5418, "Raw parts");
+  var OUT = makeBin(10, 2.6, 0x1d4f4a, "Finished parts");
+  var DOCK = new V(5.6, 0, 1.0);
+
+  // small tables for the arm cells
+  function makeTable(p, withParts){
+    var t = box(0.7, 0.8, 0.6, mat(0x3a4952)); t.position.set(p.x, 0.4, p.z); scene.add(t);
+    if (withParts) for (var i = 0; i < 3; i++){ var q = partMesh(); q.position.set(p.x - 0.22 + i*0.2, 0.88, p.z + (i % 2 ? 0.17 : -0.17)); q.scale.set(0.7, 0.7, 0.7); scene.add(q); }
+  }
+
+  var robots = [];
+  function makeTag(){ var tag = document.createElement("div"); tag.className = "ar-tag"; tagsEl.appendChild(tag); return tag; }
+  function rings(g){
+    var ring = new T.Mesh(new T.RingGeometry(0.45, 0.55, 40), new T.MeshBasicMaterial({color: 0xf2b71c, side: T.DoubleSide})); ring.rotation.x = -Math.PI/2; ring.position.y = 0.02; ring.visible = false; g.add(ring);
+    var halo = new T.Mesh(new T.RingGeometry(0.55, 0.68, 40), new T.MeshBasicMaterial({color: 0xff6a52, side: T.DoubleSide, transparent: true, opacity: 0.8})); halo.rotation.x = -Math.PI/2; halo.position.y = 0.025; halo.visible = false; g.add(halo);
+    return [ring, halo];
+  }
+
+  // cobot arm (fixed to a CNC)
+  var L1 = 0.8, L2 = 0.75, SHY = 1.05, GRIP = 0.14;
+  function makeArm(id, m){
+    var P = new V(m.fixture.x + 0.9, 0, m.fixture.z + 0.9);
+    var g = new T.Group(); g.position.copy(P);
+    var bodyM = mat(0xc9d3d0, {roughness: 0.45, metalness: 0.3}), darkM = mat(0x0b1114, {roughness: 0.4});
+    var ped = new T.Mesh(new T.CylinderGeometry(0.2, 0.26, 0.8, 20), mat(0x2b3a42)); ped.position.y = 0.4; g.add(ped);
+    var turret = new T.Group(); turret.position.y = 0.8; g.add(turret);
+    var base = new T.Mesh(new T.CylinderGeometry(0.17, 0.17, 0.25, 20), bodyM); base.position.y = 0.125; turret.add(base);
+    var sh = new T.Group(); sh.position.y = 0.25; turret.add(sh);
+    sh.add(new T.Mesh(new T.SphereGeometry(0.12, 16, 12), darkM));
+    var up = box(0.13, L1, 0.13, bodyM); up.position.y = L1/2; sh.add(up);
+    var el = new T.Group(); el.position.y = L1; sh.add(el);
+    el.add(new T.Mesh(new T.SphereGeometry(0.1, 16, 12), darkM));
+    var fo = box(0.11, L2, 0.11, bodyM); fo.position.y = L2/2; el.add(fo);
+    var gr = box(0.18, 0.08, 0.12, darkM); gr.position.y = L2; el.add(gr);
+    var rh = rings(g);
+    g.traverse(function(o){ o.userData.robot = id; });
+    scene.add(g);
+    var part = partMesh(); part.visible = false; scene.add(part);
+    var inP = new V(P.x + 1.0, 0.88, P.z - 0.75), outP = new V(P.x + 0.75, 0.88, P.z + 1.05);
+    makeTable(inP, true); makeTable(outP, false);
+    var fix = new V(m.fixture.x, 1.17, m.fixture.z);
+    var pts = {home: new V(P.x + 0.3, 1.6, P.z - 0.3), inP: inP, inA: inP.clone().add(new V(0, 0.3, 0)),
+      fix: fix, fixA: fix.clone().add(new V(0, 0.35, 0)), outP: outP, outA: outP.clone().add(new V(0, 0.3, 0))};
+    var r = {id: id, type: "arm", g: g, turret: turret, sh: sh, el: el, part: part, ring: rh[0], halo: rh[1], tag: makeTag(),
+      P: P, pts: pts, ee: pts.home.clone(), from: pts.home.clone(), machine: null, plan: [], pi: 0, state: "idle", t: 0, phase: rnd(0, 6), helpT: 0, opT: 0, fail: null, reason: "", cycles: 0};
+    robots.push(r); return r;
+  }
+  function solveArm(r){
+    var dx = r.ee.x - r.P.x, dz = r.ee.z - r.P.z, ty = r.ee.y + GRIP;
+    r.turret.rotation.y = Math.atan2(dx, dz);
+    var rr = Math.hypot(dx, dz), h = ty - SHY;
+    var d = Math.max(Math.abs(L1 - L2) + 0.01, Math.min(L1 + L2 - 0.001, Math.hypot(rr, h)));
+    var c2 = Math.max(-1, Math.min(1, (d*d - L1*L1 - L2*L2)/(2*L1*L2)));
+    var a2 = Math.acos(c2), phi = Math.atan2(rr, h);
+    r.sh.rotation.x = phi - Math.atan2(L2*Math.sin(a2), L1 + L2*Math.cos(a2));
+    r.el.rotation.x = a2;
+    if (r.part.visible) r.part.position.set(r.ee.x, r.ee.y, r.ee.z);
+  }
+
+  // humanoid
+  function makeHumanoid(id, color, pos, binOff){
+    var g = new T.Group(); g.position.copy(pos);
+    var bodyM = mat(color, {roughness: 0.5, metalness: 0.3}), darkM = mat(0x0b1114, {roughness: 0.4});
+    var hipL = new T.Group(), hipR = new T.Group(); hipL.position.set(-0.13, 0.9, 0); hipR.position.set(0.13, 0.9, 0);
+    var legL = box(0.16, 0.86, 0.18, bodyM); legL.position.y = -0.43; hipL.add(legL);
+    var legR = box(0.16, 0.86, 0.18, bodyM); legR.position.y = -0.43; hipR.add(legR);
+    g.add(hipL); g.add(hipR);
+    var torso = box(0.48, 0.62, 0.28, bodyM); torso.position.y = 1.24; g.add(torso);
+    var chest = box(0.3, 0.16, 0.02, darkM); chest.position.set(0, 1.33, 0.15); g.add(chest);
+    var head = new T.Mesh(new T.SphereGeometry(0.15, 20, 16), bodyM); head.position.y = 1.72; g.add(head);
+    var visor = box(0.22, 0.07, 0.06, darkM); visor.position.set(0, 1.74, 0.12); g.add(visor);
+    var shL = new T.Group(), shR = new T.Group(); shL.position.set(-0.32, 1.5, 0); shR.position.set(0.32, 1.5, 0);
+    var armL = box(0.11, 0.62, 0.12, bodyM); armL.position.y = -0.31; shL.add(armL);
+    var armR = box(0.11, 0.62, 0.12, bodyM); armR.position.y = -0.31; shR.add(armR);
+    g.add(shL); g.add(shR);
+    var part = partMesh(); part.position.set(0, 1.02, 0.42); part.visible = false; g.add(part);
+    var rh = rings(g);
+    g.traverse(function(o){ o.userData.robot = id; });
+    scene.add(g);
+    var r = {id: id, type: "humanoid", g: g, hipL: hipL, hipR: hipR, shL: shL, shR: shR, part: part, ring: rh[0], halo: rh[1], tag: makeTag(), binOff: binOff,
+      machine: null, plan: [], pi: 0, state: "idle", t: 0, phase: rnd(0, 6), yaw: 0, face: 0, helpT: 0, opT: 0, fail: null, reason: "", cycles: 0};
+    robots.push(r); return r;
+  }
+
+  function planArm(r){
+    var p = r.pts, m = r.machine;
+    return [
+      {k: "move", to: p.inA, dur: 1.0, label: "Reaching to infeed tray"},
+      {k: "move", to: p.inP, dur: 0.6, label: "Pick part", after: function(r){ r.part.visible = true; }},
+      {k: "move", to: p.fixA, dur: 1.4, lift: 0.25, label: "Carrying part to " + m.name},
+      {k: "move", to: p.fix, dur: 1.3, risk: true, label: "Load into fixture", after: function(r){ r.part.visible = false; m.loaded.visible = true; }},
+      {k: "move", to: p.home, dur: 3.2, moveDur: 0.9, label: "Machine cycle", start: function(){ m.running = 3.2; }},
+      {k: "move", to: p.fix, dur: 1.0, label: "Unload part", after: function(r){ r.part.visible = true; m.loaded.visible = false; }},
+      {k: "move", to: p.outA, dur: 1.4, lift: 0.25, label: "Carrying to outfeed tray"},
+      {k: "move", to: p.outP, dur: 0.6, label: "Place part", after: function(r){ r.part.visible = false; r.cycles++; }}
+    ];
+  }
+  function planHumanoid(r){
+    var m = r.machine, o = new V(0, 0, r.binOff);
+    return [
+      {k: "walk", to: RAW.pos.clone().add(o), face: Math.PI/2, label: "Walking to raw parts"},
+      {k: "act", label: "Pick part", dur: 1.3, pose: "reach", after: function(r){ r.part.visible = true; }},
+      {k: "walk", to: m.stand, face: Math.PI, label: "Carrying part to " + m.name},
+      {k: "act", label: "Load into fixture", dur: 1.9, pose: "reach", risk: true, after: function(r){ r.part.visible = false; m.loaded.visible = true; }},
+      {k: "act", label: "Machine cycle", dur: 3.2, pose: "wait", start: function(){ m.running = 3.2; }},
+      {k: "act", label: "Unload part", dur: 1.3, pose: "reach", after: function(r){ r.part.visible = true; m.loaded.visible = false; }},
+      {k: "walk", to: OUT.pos.clone().add(o), face: Math.PI/2, label: "Carrying to finished bin"},
+      {k: "act", label: "Place in bin", dur: 1.0, pose: "reach", after: function(r){ r.part.visible = false; r.cycles++; }}
+    ];
+  }
+
+  var policyV = 0, corrections = 0, sinceRetrain = 0, logItems = [], selected = null, assist = null, toastMsg = "", toastT = 0;
+  var REASONS = ["part misaligned with fixture", "clamp collision", "part slipped in grip"];
+  function pFail(){ return 0.55 * Math.pow(0.55, policyV); }
+
+  function startStep(r){
+    var s = r.plan[r.pi]; r.t = 0; r.fail = null;
+    if (r.type === "arm") r.from = r.ee.clone();
+    if (s.start) s.start(r);
+    if (s.risk && Math.random() < pFail()) r.fail = {at: s.dur * rnd(0.35, 0.7), reason: REASONS[Math.floor(Math.random()*REASONS.length)]};
+    r.state = s.k === "walk" ? "walk" : "act";
+  }
+  function nextStep(r){
+    var s = r.plan[r.pi]; if (s.k === "walk") r.face = s.face;
+    r.pi = (r.pi + 1) % r.plan.length; startStep(r);
+  }
+  function addLog(text){
+    logItems.unshift(text); if (logItems.length > 4) logItems.pop();
+    $("arLog").innerHTML = logItems.map(function(t, i){ return '<div class="' + (i === 0 ? "new" : "") + '">' + t + '</div>'; }).join("");
+  }
+  function toast(m){ toastMsg = m; toastT = 4; }
+  function finishCorrection(r, by){
+    var s = r.plan[r.pi];
+    addLog(r.id + " · " + s.label + " · " + r.reason + " · fixed by " + by);
+    corrections++; sinceRetrain++;
+    if (sinceRetrain >= 3 && policyV < 4){ policyV++; sinceRetrain = 0; toast("Policy v" + policyV + " retrained on " + corrections + " corrections"); }
+    r.fail = null; r.state = "act"; r.t = s.dur; r.halo.visible = false;
+  }
+
+  function lerpAngle(a, b, t){ var d = ((b - a + Math.PI*3) % (Math.PI*2)) - Math.PI; return a + d*t; }
+  function setPose(r, kind, k){
+    if (r.type !== "humanoid") return;
+    if (kind === "walk"){
+      var s = Math.sin(r.phase);
+      r.hipL.rotation.x = s*0.5; r.hipR.rotation.x = -s*0.5;
+      r.shL.rotation.x = -s*0.4 - (r.part.visible ? 0.9 : 0); r.shR.rotation.x = s*0.4 - (r.part.visible ? 0.9 : 0);
+      r.g.position.y = Math.abs(Math.cos(r.phase))*0.03;
+    } else {
+      r.hipL.rotation.x *= 0.8; r.hipR.rotation.x *= 0.8; r.g.position.y = 0;
+      var target = kind === "reach" ? -0.6 - 0.5*Math.sin(Math.min(1, k)*Math.PI) : (r.part.visible ? -0.9 : -0.05 + Math.sin(r.phase*0.3)*0.04);
+      r.shL.rotation.x += (target - r.shL.rotation.x)*0.2; r.shR.rotation.x += (target - r.shR.rotation.x)*0.2;
+    }
+  }
+  function ease(k){ return k < 0.5 ? 2*k*k : 1 - Math.pow(-2*k + 2, 2)/2; }
+
+  function updateRobot(r, dt){
+    r.phase += dt;
+    if (r.type === "arm") solveArm(r);
+    if (r.state === "idle"){ setPose(r, "wait", 0); return; }
+    if (r.state === "help"){
+      r.helpT += dt; r.halo.visible = true; r.halo.material.opacity = 0.45 + 0.4*Math.abs(Math.sin(r.phase*4));
+      setPose(r, "wait", 0);
+      var busy = robots.some(function(o){ return o.state === "simop"; });
+      if (r.helpT > 10 && !busy && !(assist && assist.r === r)){ r.state = "simop"; r.opT = 2.6; }
+      return;
+    }
+    if (r.state === "simop"){ r.opT -= dt; setPose(r, "reach", 1 - r.opT/2.6); if (r.opT <= 0) finishCorrection(r, "sim operator"); return; }
+    if (r.state === "assist"){ setPose(r, "wait", 0); return; }
+    var s = r.plan[r.pi];
+    if (r.type === "arm"){
+      r.t += dt;
+      var k = ease(Math.min(1, r.t / (s.moveDur || s.dur)));
+      r.ee.copy(r.from).lerp(s.to, k); if (s.lift) r.ee.y += Math.sin(k*Math.PI)*s.lift;
+      if (r.fail && r.t >= r.fail.at){ r.state = "help"; r.helpT = 0; r.reason = r.fail.reason; addLog(r.id + " asked for help · " + r.reason); return; }
+      if (r.t >= s.dur){ r.ee.copy(s.to); if (s.after) s.after(r); nextStep(r); }
+      return;
+    }
+    if (r.state === "walk"){
+      var d = new V().subVectors(s.to, r.g.position); d.y = 0;
+      var dist = d.length();
+      if (dist < 0.05){ r.g.position.x = s.to.x; r.g.position.z = s.to.z; nextStep(r); return; }
+      d.normalize(); r.g.position.addScaledVector(d, Math.min(dist, 1.6*dt));
+      r.yaw = lerpAngle(r.yaw, Math.atan2(d.x, d.z), Math.min(1, dt*8)); r.g.rotation.y = r.yaw;
+      r.phase += dt*8; setPose(r, "walk", 0);
+      return;
+    }
+    if (r.state === "act"){
+      r.yaw = lerpAngle(r.yaw, r.face, Math.min(1, dt*6)); r.g.rotation.y = r.yaw;
+      r.t += dt; setPose(r, s.pose, r.t / s.dur);
+      if (r.fail && r.t >= r.fail.at){ r.state = "help"; r.helpT = 0; r.reason = r.fail.reason; addLog(r.id + " asked for help · " + r.reason); return; }
+      if (r.t >= s.dur){ if (s.after) s.after(r); nextStep(r); }
+    }
+  }
+
+  // fleet: R1, R2 cobot arms on the CNCs; R3, R4 humanoids for the presses (same as the console above)
+  var R1 = makeArm("R1", machines.cnc1);
+  var R2 = makeArm("R2", machines.cnc2);
+  var R3 = makeHumanoid("R3", 0xb9c6c2, machines.press1.stand.clone(), -0.35);
+  var R4 = makeHumanoid("R4", 0xa8b0c8, DOCK.clone(), 0.35);
+  function assign(r, m){
+    if (r.type === "arm") return r.id + " is a cobot arm bolted to " + r.machine.name + ". Pick a humanoid to reassign.";
+    if (m.owner && m.owner !== r) return m.name + " is already run by " + m.owner.id + (m.owner.type === "arm" ? " (cobot arm)." : ".");
+    if (r.machine) r.machine.owner = null;
+    m.owner = r; r.machine = m; r.plan = planHumanoid(r); r.pi = 0; r.part.visible = false; r.halo.visible = false; startStep(r);
+    return null;
+  }
+  [R1, R2].forEach(function(r, i){ var m = i ? machines.cnc2 : machines.cnc1; m.owner = r; r.machine = m; r.plan = planArm(r); });
+  R1.ee.copy(R1.pts.inP); R1.part.visible = true; R1.pi = 2; startStep(R1);
+  R2.ee.copy(R2.pts.fix); machines.cnc2.loaded.visible = true; R2.pi = 4; startStep(R2);
+  assign(R3, machines.press1); R3.pi = 3; R3.part.visible = true; R3.face = Math.PI; R3.yaw = Math.PI; R3.g.rotation.y = Math.PI;
+  R3.state = "help"; R3.reason = "part misaligned with fixture"; R3.t = 0.8; R3.helpT = 0;
+  R4.yaw = Math.PI; R4.g.rotation.y = Math.PI;
+  addLog("R3 asked for help · part misaligned with fixture");
+
+  // camera
+  var HOME = {pos: new V(1.2, 10.5, 14.5), look: new V(1.2, 0.4, -2.2)};
+  var camGoal = {pos: HOME.pos.clone(), look: HOME.look.clone()};
+  var camLook = HOME.look.clone();
+  var yawOff = 0;
+  camera.position.copy(HOME.pos);
+  function homeView(){ camGoal.pos.copy(HOME.pos); camGoal.look.copy(HOME.look); }
+
+  // assist mode
+  var rayc = new T.Raycaster(), ndc = new T.Vector2();
+  function startAssist(r){
+    if (assist || (r.state !== "help" && r.state !== "simop")) return;
+    r.state = "assist"; r.halo.visible = false;
+    var m = r.machine;
+    var part = box(0.24, 0.16, 0.24, mat(0x8296ff, {roughness: 0.4, emissive: 0x1a2a80}));
+    part.position.copy(m.fixture).add(new V(-0.45, 0.14, 0.35)); part.rotation.y = 0.5; scene.add(part);
+    var slot = new T.LineSegments(new T.EdgesGeometry(new T.BoxGeometry(0.27, 0.18, 0.27)), new T.LineBasicMaterial({color: 0xf2b71c}));
+    slot.position.copy(m.fixture).add(new V(0, 0.06, 0)); scene.add(slot);
+    r.part.visible = false;
+    assist = {r: r, m: m, part: part, slot: slot, done: false, start: performance.now(), plane: new T.Plane(new V(0, 1, 0), -(m.fixture.y + 0.14))};
+    camGoal.pos.copy(m.fixture).add(new V(-1.45, 1.0, 1.15)); camGoal.look.copy(m.fixture).add(new V(-0.1, -0.05, 0.05));
+    hint.textContent = "You are in control of " + r.id + ". Drag the blue part into the yellow slot.";
+    $("arExitBtn").hidden = false;
+  }
+  function endAssist(fixed){
+    if (!assist) return;
+    var r = assist.r;
+    scene.remove(assist.part); scene.remove(assist.slot);
+    if (fixed){
+      var secs = Math.max(1, Math.round((performance.now() - assist.start)/1000));
+      finishCorrection(r, "you in " + secs + " s");
+      r.part.visible = true;
+      hint.textContent = "Correction saved as training data. " + r.id + " is back on its own.";
+    } else {
+      r.state = "help"; r.helpT = 0; r.part.visible = true;
+      hint.textContent = "Handed back without a fix. " + r.id + " is still waiting.";
+    }
+    assist = null; homeView(); $("arExitBtn").hidden = true;
+  }
+
+  // pointer input
+  var down = null, dragging = false;
+  function setNdc(ev){ var b = cv.getBoundingClientRect(); ndc.x = ((ev.clientX - b.left)/b.width)*2 - 1; ndc.y = -((ev.clientY - b.top)/b.height)*2 + 1; }
+  cv.addEventListener("pointerdown", function(ev){
+    cv.setPointerCapture(ev.pointerId); down = {x: ev.clientX, y: ev.clientY, yaw: yawOff, moved: false};
+    if (assist && !assist.done) dragging = true;
+  });
+  cv.addEventListener("pointermove", function(ev){
+    if (!down) return;
+    if (Math.abs(ev.clientX - down.x) + Math.abs(ev.clientY - down.y) > 6) down.moved = true;
+    if (dragging && assist){
+      setNdc(ev); rayc.setFromCamera(ndc, camera);
+      var hit = new V();
+      if (rayc.ray.intersectPlane(assist.plane, hit)){
+        var f = assist.m.fixture;
+        hit.x = Math.max(f.x - 0.9, Math.min(f.x + 0.9, hit.x)); hit.z = Math.max(f.z - 0.6, Math.min(f.z + 0.9, hit.z));
+        assist.part.position.x = hit.x; assist.part.position.z = hit.z;
+        assist.part.rotation.y *= 0.9;
+        if (Math.hypot(hit.x - f.x, hit.z - f.z) < 0.1){
+          assist.done = true; dragging = false;
+          assist.part.position.set(f.x, f.y + 0.06, f.z); assist.part.rotation.y = 0;
+          assist.slot.material.color.setHex(0x3fc7bc);
+          hint.textContent = "Seated. Logging correction...";
+          setTimeout(function(){ endAssist(true); }, reduce ? 0 : 800);
+        }
+      }
+      return;
+    }
+    if (!assist){ yawOff = Math.max(-0.7, Math.min(0.7, down.yaw - (ev.clientX - down.x)*0.004)); }
+  });
+  cv.addEventListener("pointerup", function(ev){
+    var wasClick = down && !down.moved; down = null; dragging = false;
+    if (!wasClick || assist) return;
+    setNdc(ev); rayc.setFromCamera(ndc, camera);
+    var hits = rayc.intersectObjects(scene.children, true);
+    for (var i = 0; i < hits.length; i++){
+      var u = hits[i].object.userData;
+      if (u.robot){
+        var r = robots.filter(function(x){ return x.id === u.robot; })[0];
+        if (r.state === "help" || r.state === "simop"){ startAssist(r); return; }
+        if (r.type === "arm"){ selected = null; hint.textContent = r.id + " is a cobot arm fixed to " + r.machine.name + ". It only needs you when it asks for help."; return; }
+        selected = (selected === r) ? null : r;
+        hint.textContent = selected ? ("Now click a press to assign " + r.id + ".") : "Click a humanoid, then a machine to assign it.";
+        return;
+      }
+      if (u.machine){
+        var m = machines[u.machine];
+        if (!selected){ hint.textContent = "Select a humanoid first, then click " + m.name + "."; return; }
+        var err = assign(selected, m);
+        if (err){ hint.textContent = err; return; }
+        addLog("Operator assigned " + selected.id + " to " + m.name); hint.textContent = selected.id + " is heading to " + m.name + "."; selected = null;
+        return;
+      }
+    }
+  });
+  cv.addEventListener("pointercancel", function(){ down = null; dragging = false; });
+
+  $("arAssist").addEventListener("click", function(){
+    var r = robots.filter(function(x){ return x.state === "help" || x.state === "simop"; })[0];
+    if (r) startAssist(r);
+  });
+  $("arExitBtn").addEventListener("click", function(){ endAssist(false); });
+  $("arViewBtn").addEventListener("click", function(){ yawOff = 0; if (!assist) homeView(); });
+  $("arAssignBtn").addEventListener("click", function(){
+    if (R4.machine){ hint.textContent = "R4 is already assigned to " + R4.machine.name + "."; return; }
+    var err = assign(R4, machines.press2);
+    if (err){ hint.textContent = err; return; }
+    addLog("Operator assigned R4 to Press 2"); hint.textContent = "R4 is heading to Press 2.";
+  });
+  window.addEventListener("keydown", function(ev){ if (ev.key === "Escape" && assist) endAssist(false); });
+
+  // tags
+  var tmp = new V();
+  function placeTag(el, world, w, h){
+    tmp.copy(world).project(camera);
+    if (tmp.z > 1 || tmp.x < -1.2 || tmp.x > 1.2 || tmp.y < -1.2 || tmp.y > 1.2){ el.style.display = "none"; return; }
+    el.style.display = "";
+    var x = (tmp.x + 1)/2*w, y = (1 - tmp.y)/2*h;
+    el.style.transform = "translate(" + Math.round(x) + "px," + Math.round(y) + "px) translate(-50%,-100%)";
+  }
+  var STATE_TXT = {idle: "Idle · assign me", walk: "Autonomous", act: "Autonomous", help: "Needs help", simop: "Operator assisting", assist: "You are in control"};
+  var anchor = new V();
+  function updateTags(w, h){
+    robots.forEach(function(r){
+      var cls = r.state === "help" ? "help" : (r.state === "simop" || r.state === "assist") ? "op" : r.state === "idle" ? "idle" : "";
+      r.tag.className = "ar-tag " + cls + (selected === r ? " sel" : "");
+      var step = r.state === "idle" ? "No task" : (r.state === "help" ? r.reason : r.plan[r.pi].label);
+      r.tag.innerHTML = "<b>" + r.id + "</b> " + (r.type === "arm" ? "arm" : "humanoid") + " · " + STATE_TXT[r.state] + '<br><span class="s">' + step + "</span>";
+      r.ring.visible = selected === r;
+      placeTag(r.tag, anchor.set(r.g.position.x, r.type === "arm" ? 2.05 : 2.2, r.g.position.z), w, h);
+    });
+    Object.keys(machines).forEach(function(k){
+      var m = machines[k];
+      m.tag.textContent = m.name + (m.running > 0 ? " · running" : m.owner ? " · " + m.owner.id : " · unassigned");
+      placeTag(m.tag, anchor.set(m.fixture.x - 0.55, 2.95, m.fixture.z - 1.05), w, h);
+    });
+    placeTag(RAW.tag, RAW.top, w, h); placeTag(OUT.tag, OUT.top, w, h);
+
+    var helpers = robots.filter(function(r){ return r.state === "help"; });
+    var al = $("arAlert");
+    if (helpers.length && !assist){
+      al.hidden = false;
+      $("arAlertMsg").textContent = helpers[0].id + " needs help · " + helpers[0].reason;
+    } else al.hidden = true;
+    var st = W < 560 ? ("v" + policyV + " · " + corrections + " fixes · " + Math.round(pFail()*100) + "% help") : ("Policy v" + policyV + " · " + corrections + " corrections · help on " + Math.round(pFail()*100) + "% of loads");
+    if (toastT > 0) st = toastMsg;
+    $("arStatus").textContent = st;
+  }
+
+  // loop
+  var W = 0, H = 0, visible = true, last = performance.now();
+  function resize(){
+    var w = wrap.clientWidth, h = wrap.clientHeight;
+    if (!w || !h) return;
+    W = w; H = h; renderer.setSize(w, h, false); camera.aspect = w/h;
+    camera.fov = w/h < 1 ? 74 : 46; camera.updateProjectionMatrix();
+    if (w/h < 1){ HOME.pos.set(1.5, 13.5, 9.5); HOME.look.set(1.5, 0, -2.6); } else { HOME.pos.set(2.0, 9.6, 13.2); HOME.look.set(1.7, 0.3, -2.3); }
+    if (!assist) homeView();
+  }
+  if (window.ResizeObserver) new ResizeObserver(resize).observe(wrap); else window.addEventListener("resize", resize);
+  resize();
+  if (window.IntersectionObserver){
+    new IntersectionObserver(function(es){ var was = visible; visible = es[0].isIntersecting; if (visible && !was){ last = performance.now(); requestAnimationFrame(frame); } }, {threshold: 0.05}).observe(wrap);
+  }
+  function frame(now){
+    var dt = Math.min(0.05, (now - last)/1000); last = now;
+    if (toastT > 0) toastT -= dt;
+    robots.forEach(function(r){ updateRobot(r, dt); });
+    Object.keys(machines).forEach(function(k){
+      var m = machines[k];
+      if (m.running > 0){ m.running -= dt; m.light.material.color.setHex(Math.sin(now/180) > 0 ? 0x3fc7bc : 0x1d4f4a); }
+      else m.light.material.color.setHex(m.owner && m.owner.state === "help" ? 0xff6a52 : (m.owner ? 0xf2b71c : 0x3a4952));
+    });
+    var goalPos = camGoal.pos.clone();
+    if (!assist && yawOff !== 0){
+      var rel = goalPos.clone().sub(camGoal.look);
+      rel.applyAxisAngle(new V(0, 1, 0), yawOff); goalPos = camGoal.look.clone().add(rel);
+    }
+    if (!assist && !reduce) goalPos.y += Math.sin(now/1600)*0.06;
+    var k = Math.min(1, dt*3);
+    camera.position.lerp(goalPos, k); camLook.lerp(camGoal.look, k); camera.lookAt(camLook);
+    renderer.render(scene, camera);
+    updateTags(W, H);
+    if (visible) requestAnimationFrame(frame);
+  }
+  requestAnimationFrame(frame);
+})();
+</script>
+
+</body>
+</html>
