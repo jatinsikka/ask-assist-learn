@@ -16,10 +16,15 @@ The page covers:
 - Models and training: per-step visuomotor policies (Diffusion Policy or ACT), learned help requests, HG-DAgger / Sirius-style learning from corrections, and RL fine-tuning in Isaac Lab, with a VLA comparison (π0.5 via openpi, GR00T N1)
 - Three research questions, related work, and a plan that starts with robot arms
 
+## Simulation
+
+`sim/` is a toy MuJoCo version of the loop: an arm tends a CNC machine, asks for help when its policy ensemble is unsure, and retrains on the operator's corrections. See [sim/README.md](sim/README.md).
+
 ## Files
 
 - `index.html`: the whole site in one file (pitch, supervisor console, 3D AR operator view)
 - `.nojekyll`: serve the files as-is, without Jekyll
+- `sim/`: the MuJoCo cell, policies and experiment scripts
 
 The 3D view loads three.js r128 from cdnjs, and fonts load from Google Fonts. The console and 3D simulation are scripted for illustration, not physics.
 

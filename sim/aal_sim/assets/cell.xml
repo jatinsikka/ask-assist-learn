@@ -1,0 +1,153 @@
+<!--
+  Ask, Assist, Learn: machine-tending cell.
+  A 5-DOF arm with a parallel gripper tends a CNC machine:
+  pick a raw part from the input tray, load it into the machine's fixture,
+  wait for the cycle, unload the finished part, place it in the output bin.
+  World frame: z up, table top at z = 0, arm base at the origin.
+-->
+<mujoco model="aal_machine_tending_cell">
+  <compiler angle="radian" autolimits="true"/>
+  <option timestep="0.002" integrator="implicitfast" cone="elliptic" impratio="10"/>
+
+  <visual>
+    <headlight ambient="0.35 0.35 0.35" diffuse="0.6 0.6 0.6" specular="0.1 0.1 0.1"/>
+    <global offwidth="1280" offheight="960" azimuth="135" elevation="-30"/>
+    <quality shadowsize="4096"/>
+  </visual>
+
+  <asset>
+    <texture type="skybox" builtin="gradient" rgb1="0.93 0.95 0.94" rgb2="0.55 0.62 0.66" width="512" height="3072"/>
+    <texture name="grid" type="2d" builtin="checker" rgb1="0.86 0.87 0.85" rgb2="0.80 0.82 0.80" width="512" height="512"/>
+    <material name="floor" texture="grid" texrepeat="6 6"/>
+    <material name="table" rgba="0.93 0.94 0.92 1"/>
+    <material name="arm" rgba="0.92 0.93 0.94 1" specular="0.4"/>
+    <material name="joint" rgba="0.08 0.10 0.11 1"/>
+    <material name="amber" rgba="0.88 0.63 0.0 1"/>
+    <material name="machine" rgba="0.33 0.38 0.42 1"/>
+    <material name="steel" rgba="0.62 0.66 0.68 1" specular="0.6"/>
+    <material name="tray" rgba="0.05 0.48 0.45 0.35"/>
+    <material name="bin" rgba="0.20 0.31 0.82 1"/>
+  </asset>
+
+  <default>
+    <default class="arm">
+      <joint armature="0.05" damping="2.0"/>
+      <geom material="arm" contype="1" conaffinity="1" group="1"/>
+      <position kp="600" kv="40" forcerange="-200 200"/>
+    </default>
+    <default class="finger">
+      <joint type="slide" range="0 0.04" armature="0.01" damping="5"/>
+      <geom type="box" size="0.012 0.006 0.025" material="joint" friction="1.5 0.02 0.002"
+            condim="4" contype="2" conaffinity="1" solref="0.004 1"/>
+      <position kp="300" kv="20" ctrlrange="0 0.04" forcerange="-25 25"/>
+    </default>
+    <default class="static">
+      <geom contype="1" conaffinity="1" group="0"/>
+    </default>
+    <default class="visual">
+      <geom contype="0" conaffinity="0" group="2"/>
+    </default>
+  </default>
+
+  <worldbody>
+    <light pos="0.3 -0.4 2.0" dir="0 0.2 -1" diffuse="0.6 0.6 0.6" castshadow="true"/>
+    <geom name="floor" type="plane" pos="0 0 -0.76" size="3 3 0.1" material="floor" class="static"/>
+    <geom name="table" type="box" pos="0.3 0 -0.02" size="0.8 0.8 0.02" material="table" class="static"/>
+
+    <camera name="overview" pos="1.35 -1.0 0.95" xyaxes="0.669 0.743 0 -0.594 0.535 1.345" fovy="45"/>
+    <camera name="top" pos="0.3 0 1.6" xyaxes="0 -1 0 1 0 0" fovy="45"/>
+
+    <!-- Input tray: painted region where raw parts arrive. -->
+    <geom name="input_tray" type="box" pos="0.45 -0.25 0.0005" size="0.09 0.09 0.0005" material="tray" class="visual"/>
+
+    <!-- CNC machine: base, column, spindle head, status light. The fixture sits on the base top (z = 0.10). -->
+    <body name="machine" pos="0.45 0.25 0">
+      <geom name="machine_base" type="box" pos="0 0 0.05" size="0.1 0.1 0.05" material="machine" class="static"/>
+      <geom name="machine_column" type="box" pos="0.17 0 0.2" size="0.03 0.09 0.2" material="machine" class="static"/>
+      <geom name="spindle_head" type="box" pos="0.12 0 0.34" size="0.04 0.05 0.05" material="steel" class="visual"/>
+      <geom name="spindle" type="cylinder" pos="0.12 0 0.27" size="0.012 0.03" material="joint" class="visual"/>
+      <geom name="status_light" type="sphere" pos="0.17 0 0.43" size="0.025" rgba="0.2 0.8 0.3 1" class="visual"/>
+    </body>
+
+    <!-- Fixture: a square pocket with 6 mm clearance per side. Its pose is randomized at reset (fixture_shift fault). -->
+    <body name="fixture" pos="0.45 0.25 0.10">
+      <geom name="fixture_plate" type="box" pos="0 0 0.001" size="0.05 0.05 0.001" material="steel" class="visual"/>
+      <geom name="fixture_px" type="box" pos="0.032 0 0.01" size="0.006 0.038 0.01" material="steel" class="static"/>
+      <geom name="fixture_nx" type="box" pos="-0.032 0 0.01" size="0.006 0.038 0.01" material="steel" class="static"/>
+      <geom name="fixture_py" type="box" pos="0 0.032 0.01" size="0.026 0.006 0.01" material="steel" class="static"/>
+      <geom name="fixture_ny" type="box" pos="0 -0.032 0.01" size="0.026 0.006 0.01" material="steel" class="static"/>
+      <site name="fixture_seat" pos="0 0 0.03" size="0.004" rgba="1 0 0 0.5" group="3"/>
+    </body>
+
+    <!-- Output bin. -->
+    <body name="bin" pos="0.15 -0.47 0">
+      <geom name="bin_floor" type="box" pos="0 0 0.0025" size="0.09 0.09 0.0025" material="bin" class="static"/>
+      <geom name="bin_px" type="box" pos="0.0925 0 0.03" size="0.0025 0.095 0.03" material="bin" class="static"/>
+      <geom name="bin_nx" type="box" pos="-0.0925 0 0.03" size="0.0025 0.095 0.03" material="bin" class="static"/>
+      <geom name="bin_py" type="box" pos="0 0.0925 0.03" size="0.09 0.0025 0.03" material="bin" class="static"/>
+      <geom name="bin_ny" type="box" pos="0 -0.0925 0.03" size="0.09 0.0025 0.03" material="bin" class="static"/>
+    </body>
+
+    <!-- Workpiece: 40 x 40 x 60 mm block. -->
+    <body name="part" pos="0.45 -0.25 0.03">
+      <freejoint name="part_free"/>
+      <geom name="part" type="box" size="0.02 0.02 0.03" mass="0.12" rgba="0.62 0.55 0.45 1"
+            friction="1.2 0.02 0.002" condim="4" contype="1" conaffinity="3" solref="0.004 1"/>
+    </body>
+
+    <!-- Arm. Joint order: base yaw, shoulder, elbow, wrist pitch, wrist roll. -->
+    <body name="base" pos="0 0 0" childclass="arm">
+      <geom name="base_geom" type="cylinder" pos="0 0 0.05" size="0.08 0.05" material="joint"/>
+      <body name="link1" pos="0 0 0.1" gravcomp="1">
+        <joint name="j1" axis="0 0 1" range="-3.14 3.14"/>
+        <geom type="cylinder" pos="0 0 0.075" size="0.06 0.075"/>
+        <body name="link2" pos="0 0 0.15" gravcomp="1">
+          <joint name="j2" axis="0 1 0" range="-2.0 2.0"/>
+          <geom type="cylinder" size="0.055 0.05" zaxis="0 1 0" material="joint"/>
+          <geom type="capsule" fromto="0 0 0.04 0 0 0.31" size="0.045"/>
+          <geom type="box" pos="0 0 0.18" size="0.046 0.01 0.06" material="amber" contype="0" conaffinity="0"/>
+          <body name="link3" pos="0 0 0.35" gravcomp="1">
+            <joint name="j3" axis="0 1 0" range="-2.6 2.6"/>
+            <geom type="cylinder" size="0.048 0.045" zaxis="0 1 0" material="joint"/>
+            <geom type="capsule" fromto="0.04 0 0 0.31 0 0" size="0.038"/>
+            <body name="link4" pos="0.35 0 0" gravcomp="1">
+              <joint name="j4" axis="0 1 0" range="-2.6 2.6"/>
+              <geom type="cylinder" size="0.04 0.04" zaxis="0 1 0" material="joint"/>
+              <geom type="capsule" fromto="0 0 -0.02 0 0 -0.06" size="0.032"/>
+              <body name="link5" pos="0 0 -0.08" gravcomp="1">
+                <joint name="j5" axis="0 0 1" range="-3.14 3.14"/>
+                <geom name="palm" type="box" pos="0 0 -0.02" size="0.02 0.06 0.012" material="joint"/>
+                <camera name="wrist" pos="-0.05 0 -0.01" xyaxes="0 -1 0 1 0 0" fovy="70"/>
+                <site name="tcp" pos="0 0 -0.07" size="0.006" rgba="0.88 0.63 0 1" group="3"/>
+                <body name="finger_l" pos="0 0.045 -0.032" childclass="finger" gravcomp="1">
+                  <joint name="finger_l" axis="0 -1 0"/>
+                  <geom name="finger_l" pos="0 0 -0.025"/>
+                </body>
+                <body name="finger_r" pos="0 -0.045 -0.032" childclass="finger" gravcomp="1">
+                  <joint name="finger_r" axis="0 1 0"/>
+                  <geom name="finger_r" pos="0 0 -0.025"/>
+                </body>
+              </body>
+            </body>
+          </body>
+        </body>
+      </body>
+    </body>
+  </worldbody>
+
+  <contact>
+    <exclude body1="finger_l" body2="finger_r"/>
+    <exclude body1="base" body2="link1"/>
+    <exclude body1="link1" body2="link2"/>
+  </contact>
+
+  <actuator>
+    <position name="a1" joint="j1" class="arm" ctrlrange="-3.14 3.14"/>
+    <position name="a2" joint="j2" class="arm" ctrlrange="-2.0 2.0"/>
+    <position name="a3" joint="j3" class="arm" ctrlrange="-2.6 2.6"/>
+    <position name="a4" joint="j4" class="arm" ctrlrange="-2.6 2.6" kp="300" kv="20"/>
+    <position name="a5" joint="j5" class="arm" ctrlrange="-3.14 3.14" kp="200" kv="10"/>
+    <position name="grip_l" joint="finger_l" class="finger"/>
+    <position name="grip_r" joint="finger_r" class="finger"/>
+  </actuator>
+</mujoco>

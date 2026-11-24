@@ -1,0 +1,19 @@
+[project]
+name = "aal-sim"
+version = "0.1.0"
+description = "Ask, Assist, Learn: MuJoCo machine-tending cell with human-in-the-loop learning"
+requires-python = ">=3.10"
+dependencies = ["mujoco>=3.2", "gymnasium>=1.0", "numpy>=1.26", "torch>=2.2", "imageio>=2.34", "imageio-ffmpeg", "pillow"]
+
+[project.optional-dependencies]
+dev = ["pytest"]
+
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+include = ["aal_sim*"]
+
+[tool.setuptools.package-data]
+aal_sim = ["assets/*.xml"]
