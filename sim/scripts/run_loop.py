@@ -1,4 +1,4 @@
-"""The thesis loop in simulation: demos -> deploy with asking -> operator corrections -> retrain, repeated.
+"""The ask-assist-learn loop in simulation: demos -> deploy with asking -> operator corrections -> retrain, repeated.
 
 Reports, per round: autonomous success (no help allowed), and for the deployed HITL cell:
 success, asks per episode, operator minutes per robot-hour, autonomy fraction, parts per hour.

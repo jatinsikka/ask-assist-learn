@@ -1,6 +1,6 @@
 # Ask, Assist, Learn
 
-Proposed MS thesis pitch: human-in-the-loop learning for long-horizon robot manipulation in manufacturing, on robot arms and humanoids.
+Human-in-the-loop learning for long-horizon robot manipulation in manufacturing, on robot arms and humanoids.
 
 Live site: https://jatinsikka.github.io/ask-assist-learn/
 
@@ -22,7 +22,7 @@ The page covers:
 
 ## Files
 
-- `index.html`: the whole site in one file (pitch, supervisor console, 3D AR operator view)
+- `index.html`: the whole site in one file (overview, supervisor console, 3D AR operator view)
 - `.nojekyll`: serve the files as-is, without Jekyll
 - `sim/`: the MuJoCo cell, policies and experiment scripts
 

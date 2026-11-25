@@ -1,6 +1,6 @@
 # Ask, Assist, Learn: MuJoCo cell
 
-A simulated machine-tending cell for the thesis loop: **run the SOP → ask for help → operator assists → log the correction → retrain**.
+A simulated machine-tending cell for the ask-assist-learn loop: **run the SOP → ask for help → operator assists → log the correction → retrain**.
 
 A 5-DOF arm with a parallel gripper tends a CNC machine:
 
